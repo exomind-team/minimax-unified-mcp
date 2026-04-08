@@ -130,6 +130,30 @@ def test_text_to_audio_auto_play_can_use_local_artifact(tmp_path, monkeypatch):
     assert "Auto-play: played-local" in output
 
 
+def test_text_to_audio_streaming_uses_dedicated_low_latency_wrapper(monkeypatch):
+    from exomind_minimax_mcp.tools.audio import text_to_audio_streaming
+
+    recorded: dict[str, object] = {}
+
+    def fake_text_to_audio(**kwargs) -> str:
+        recorded.update(kwargs)
+        return "streaming-ok"
+
+    monkeypatch.setattr("exomind_minimax_mcp.tools.audio.text_to_audio", fake_text_to_audio)
+
+    output = text_to_audio_streaming(
+        text="hello streaming tool",
+        voice_id="voice-demo",
+    )
+
+    assert output == "streaming-ok"
+    assert recorded["text"] == "hello streaming tool"
+    assert recorded["voice_id"] == "voice-demo"
+    assert recorded["auto_play"] is True
+    assert recorded["play_streaming"] is True
+    assert recorded["resource_mode"] == "url"
+
+
 def test_play_audio_supports_streaming_iterators(monkeypatch):
     from exomind_minimax_mcp.utils import play
 

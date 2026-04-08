@@ -123,6 +123,43 @@ def text_to_audio(
     return output
 
 
+def text_to_audio_streaming(
+    text: str,
+    voice_id: str = DEFAULT_VOICE_ID,
+    model: str = DEFAULT_SPEECH_MODEL,
+    speed: float = DEFAULT_SPEED,
+    vol: float = DEFAULT_VOLUME,
+    pitch: int = DEFAULT_PITCH,
+    emotion: str = DEFAULT_EMOTION,
+    sample_rate: int = DEFAULT_SAMPLE_RATE,
+    bitrate: int = DEFAULT_BITRATE,
+    channel: int = DEFAULT_CHANNEL,
+    format: str = DEFAULT_FORMAT,
+    language_boost: str = DEFAULT_LANGUAGE_BOOST,
+    api_client: MiniMaxBaseClient | None = None,
+) -> str:
+    """Low-latency TTS + streaming playback（低延迟 TTS 流式播放） wrapper."""
+
+    return text_to_audio(
+        text=text,
+        voice_id=voice_id,
+        model=model,
+        speed=speed,
+        vol=vol,
+        pitch=pitch,
+        emotion=emotion,
+        sample_rate=sample_rate,
+        bitrate=bitrate,
+        channel=channel,
+        format=format,
+        language_boost=language_boost,
+        resource_mode=RESOURCE_MODE_URL,
+        auto_play=True,
+        play_streaming=True,
+        api_client=api_client,
+    )
+
+
 def list_voices(
     voice_type: str = "all",
     api_client: MiniMaxBaseClient | None = None,

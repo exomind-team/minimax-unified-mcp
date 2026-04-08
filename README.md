@@ -14,6 +14,7 @@ This project merges:
 - `understand_image`: official Token Plan image understanding / 官方图片理解
 - `text_to_audio`: speech generation with default `speech-2.8-hd`
 - `text_to_audio` also supports `auto_play=true` for immediate playback after TTS response
+- `text_to_audio_streaming`: dedicated low-latency TTS streaming playback tool
 - `generate_video`: default model `MiniMax-Hailuo-2.3-Fast`
 - `list_voices`
 - `voice_clone`
@@ -89,6 +90,16 @@ Example:
   "play_streaming": true
 }
 ```
+
+Dedicated MCP tool:
+
+```json
+{
+  "text": "hello from MiniMax"
+}
+```
+
+Call `text_to_audio_streaming` when you want the dedicated low-latency path directly.
 
 Current automated coverage includes:
 - config loading

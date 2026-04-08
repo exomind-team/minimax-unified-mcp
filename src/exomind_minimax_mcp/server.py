@@ -6,7 +6,13 @@ from mcp.server.fastmcp import FastMCP
 
 from exomind_minimax_mcp.config import load_settings
 from exomind_minimax_mcp.constants import DEFAULT_SPEECH_MODEL, DEFAULT_T2V_MODEL
-from exomind_minimax_mcp.tools.audio import list_voices, play_audio, text_to_audio, voice_clone
+from exomind_minimax_mcp.tools.audio import (
+    list_voices,
+    play_audio,
+    text_to_audio,
+    text_to_audio_streaming,
+    voice_clone,
+)
 from exomind_minimax_mcp.tools.generation import (
     generate_video,
     music_generation,
@@ -74,6 +80,18 @@ def create_mcp() -> FastMCP:
             resource_mode=resource_mode,
             auto_play=auto_play,
             play_streaming=play_streaming,
+        )
+
+    @mcp.tool(description="Low-latency text-to-speech streaming playback（低延迟 TTS 流式播放）.")
+    def text_to_audio_streaming_tool(
+        text: str,
+        voice_id: str = "female-shaonv-jingpin",
+        model: str = DEFAULT_SPEECH_MODEL,
+    ) -> str:
+        return text_to_audio_streaming(
+            text=text,
+            voice_id=voice_id,
+            model=model,
         )
 
     @mcp.tool(description="List available voices（列出可用声音）.")

@@ -14,6 +14,7 @@
 - `understand_image`：官方图片理解
 - `text_to_audio`：文本转语音，默认模型 `speech-2.8-hd`
 - `text_to_audio`：支持 `auto_play=true`，拿到 TTS 结果后立刻自动播放
+- `text_to_audio_streaming`：专用低延迟 TTS 流式播放工具
 - `generate_video`：默认模型 `MiniMax-Hailuo-2.3-Fast`
 - `list_voices`：列出可用音色
 - `voice_clone`：声音克隆
@@ -88,6 +89,8 @@ python scripts/run_live_api_matrix.py --json
 ```
 
 当你没有显式指定 `resource_mode` 时，这个调用会临时优先走 URL 输出，再把拿到的音频 URL 直接交给流式播放链路，实现“拿到 URL 就边下边播”。
+
+如果你想直接使用专用工具，也可以直接调用 `text_to_audio_streaming`，它内部固定采用这条低延迟链路。
 
 当前自动化测试覆盖：
 - 配置解析
