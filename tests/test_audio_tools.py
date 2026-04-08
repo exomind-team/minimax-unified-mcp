@@ -73,7 +73,12 @@ def test_text_to_audio_auto_play_prefers_url_mode_for_low_latency(monkeypatch):
     client = StubAudioClient({"data": {"audio": "https://example.com/live.mp3"}})
     recorded: dict[str, object] = {}
 
-    def fake_play_audio(input_file_path: str, is_url: bool, streaming: bool) -> str:
+    def fake_play_audio(
+        input_file_path: str,
+        is_url: bool,
+        streaming: bool,
+        on_first_audio_chunk=None,
+    ) -> str:
         recorded["input_file_path"] = input_file_path
         recorded["is_url"] = is_url
         recorded["streaming"] = streaming
@@ -129,7 +134,12 @@ def test_text_to_audio_auto_play_can_use_local_artifact(tmp_path, monkeypatch):
     client = StubAudioClient({"data": {"audio": "41424344"}})
     recorded: dict[str, object] = {}
 
-    def fake_play_audio(input_file_path: str, is_url: bool, streaming: bool) -> str:
+    def fake_play_audio(
+        input_file_path: str,
+        is_url: bool,
+        streaming: bool,
+        on_first_audio_chunk=None,
+    ) -> str:
         recorded["input_file_path"] = input_file_path
         recorded["is_url"] = is_url
         recorded["streaming"] = streaming
@@ -164,6 +174,7 @@ def test_text_to_audio_streaming_uses_dedicated_low_latency_wrapper(monkeypatch)
 
     def fake_text_to_audio(**kwargs) -> str:
         recorded.update(kwargs)
+        recorded["on_first_audio_chunk"]()
         return "streaming-ok"
 
     monkeypatch.setattr("exomind_minimax_mcp.tools.audio.text_to_audio", fake_text_to_audio)
@@ -174,12 +185,13 @@ def test_text_to_audio_streaming_uses_dedicated_low_latency_wrapper(monkeypatch)
         voice_id="voice-demo",
     )
 
-    assert output == "Latency（延迟）: 1.25s | streaming-ok"
+    assert output == "FirstAudio（首音延迟）: 1.25s | streaming-ok"
     assert recorded["text"] == "hello streaming tool"
     assert recorded["voice_id"] == "voice-demo"
     assert recorded["auto_play"] is True
     assert recorded["play_streaming"] is True
     assert recorded["resource_mode"] == "url"
+    assert callable(recorded["on_first_audio_chunk"])
 
 
 def test_play_audio_supports_streaming_iterators(monkeypatch):

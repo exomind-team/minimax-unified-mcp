@@ -29,7 +29,7 @@ def test_live_matrix_executes_every_tool_with_classified_statuses(tmp_path):
     assert result_map["query_video_generation"].status in {"passed", "processing", "skipped"}
     assert result_map["text_to_image"].status == "passed"
 
-    assert result_map["music_generation"].status in {"passed", "unsupported", "timeout"}
+    assert result_map["music_generation"].status in {"passed", "unsupported", "timeout", "usage_limit_exceeded"}
     assert result_map["voice_design"].status in {"passed", "insufficient_balance", "unsupported", "timeout"}
     assert result_map["voice_clone"].status in {"passed", "invalid_params", "unsupported", "insufficient_balance", "timeout"}
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
+from typing import Callable
 from typing import Iterator
 
 import requests
@@ -66,6 +67,7 @@ def text_to_audio(
     base_path: str | None = None,
     auto_play: bool = False,
     play_streaming: bool = True,
+    on_first_audio_chunk: Callable[[], None] | None = None,
     api_client: MiniMaxBaseClient | None = None,
 ) -> str:
     """Convert text to audio（文本转语音）."""
@@ -108,7 +110,12 @@ def text_to_audio(
     if effective_resource_mode == RESOURCE_MODE_URL:
         output = "Success"
         if auto_play:
-            play_result = play_audio(audio_data, is_url=True, streaming=play_streaming)
+            play_result = play_audio(
+                audio_data,
+                is_url=True,
+                streaming=play_streaming,
+                on_first_audio_chunk=on_first_audio_chunk,
+            )
             return f"{output}. Auto-play: {play_result}"
         return f"Success. Audio URL: {audio_data}"
 
@@ -119,7 +126,12 @@ def text_to_audio(
     Path(output_file).write_bytes(audio_bytes)
     output = f"Success. File saved as: {describe_path(output_file, output_path)}. Voice used: {voice_id}"
     if auto_play:
-        play_result = play_audio(str(output_file), is_url=False, streaming=play_streaming)
+        play_result = play_audio(
+            str(output_file),
+            is_url=False,
+            streaming=play_streaming,
+            on_first_audio_chunk=on_first_audio_chunk,
+        )
         return f"{output}. Auto-play: {play_result}"
     return output
 
@@ -142,6 +154,13 @@ def text_to_audio_streaming(
     """Low-latency TTS + streaming playback（低延迟 TTS 流式播放） wrapper."""
 
     start = time.perf_counter()
+    first_audio_latency: float | None = None
+
+    def mark_first_audio() -> None:
+        nonlocal first_audio_latency
+        if first_audio_latency is None:
+            first_audio_latency = time.perf_counter() - start
+
     result = text_to_audio(
         text=text,
         voice_id=voice_id,
@@ -158,10 +177,12 @@ def text_to_audio_streaming(
         resource_mode=RESOURCE_MODE_URL,
         auto_play=True,
         play_streaming=True,
+        on_first_audio_chunk=mark_first_audio,
         api_client=api_client,
     )
-    elapsed = time.perf_counter() - start
-    return f"Latency（延迟）: {elapsed:.2f}s | {result}"
+    if first_audio_latency is None:
+        first_audio_latency = time.perf_counter() - start
+    return f"FirstAudio（首音延迟）: {first_audio_latency:.2f}s | {result}"
 
 
 def list_voices(
@@ -251,6 +272,7 @@ def play_audio(
     input_file_path: str,
     is_url: bool = False,
     streaming: bool = True,
+    on_first_audio_chunk: Callable[[], None] | None = None,
 ) -> str:
     """Play audio from URL or local file（播放远端或本地音频）."""
 
@@ -259,7 +281,20 @@ def play_audio(
             response = requests.get(input_file_path, stream=True, timeout=DEFAULT_HTTP_TIMEOUT_SECONDS)
             response.raise_for_status()
             try:
-                play(response.iter_content(chunk_size=8192))
+                first_chunk_seen = False
+
+                def remote_iterator() -> Iterator[bytes]:
+                    nonlocal first_chunk_seen
+                    for chunk in response.iter_content(chunk_size=8192):
+                        if not chunk:
+                            continue
+                        if not first_chunk_seen:
+                            first_chunk_seen = True
+                            if on_first_audio_chunk:
+                                on_first_audio_chunk()
+                        yield chunk
+
+                play(remote_iterator())
             finally:
                 response.close()
         else:
@@ -268,12 +303,19 @@ def play_audio(
 
     file_path = process_input_file(input_file_path)
     if streaming:
+        first_chunk_seen = False
+
         def file_iterator() -> Iterator[bytes]:
+            nonlocal first_chunk_seen
             with open(file_path, "rb") as file_handle:
                 while True:
                     chunk = file_handle.read(8192)
                     if not chunk:
                         break
+                    if not first_chunk_seen:
+                        first_chunk_seen = True
+                        if on_first_audio_chunk:
+                            on_first_audio_chunk()
                     yield chunk
 
         play(file_iterator())
