@@ -94,7 +94,33 @@ def test_text_to_audio_auto_play_prefers_url_mode_for_low_latency(monkeypatch):
         "is_url": True,
         "streaming": True,
     }
+    assert "Audio URL" not in output
+    assert "https://example.com/live.mp3" not in output
     assert "Auto-play: played" in output
+
+
+def test_play_audio_hides_remote_url_after_success(monkeypatch):
+    from exomind_minimax_mcp.tools.audio import play_audio
+
+    class FakeResponse:
+        def raise_for_status(self):
+            return None
+
+        def iter_content(self, chunk_size):
+            yield b"abc"
+
+        def close(self):
+            return None
+
+    played: list[bytes] = []
+
+    monkeypatch.setattr("exomind_minimax_mcp.tools.audio.requests.get", lambda *args, **kwargs: FakeResponse())
+    monkeypatch.setattr("exomind_minimax_mcp.tools.audio.play", lambda chunks: played.extend(list(chunks)))
+
+    output = play_audio("https://example.com/live.mp3", is_url=True, streaming=True)
+
+    assert played == [b"abc"]
+    assert output == "Successfully played remote audio stream"
 
 
 def test_text_to_audio_auto_play_can_use_local_artifact(tmp_path, monkeypatch):
@@ -134,19 +160,21 @@ def test_text_to_audio_streaming_uses_dedicated_low_latency_wrapper(monkeypatch)
     from exomind_minimax_mcp.tools.audio import text_to_audio_streaming
 
     recorded: dict[str, object] = {}
+    perf_values = iter([10.0, 11.25])
 
     def fake_text_to_audio(**kwargs) -> str:
         recorded.update(kwargs)
         return "streaming-ok"
 
     monkeypatch.setattr("exomind_minimax_mcp.tools.audio.text_to_audio", fake_text_to_audio)
+    monkeypatch.setattr("exomind_minimax_mcp.tools.audio.time.perf_counter", lambda: next(perf_values))
 
     output = text_to_audio_streaming(
         text="hello streaming tool",
         voice_id="voice-demo",
     )
 
-    assert output == "streaming-ok"
+    assert output == "Latency（延迟）: 1.25s | streaming-ok"
     assert recorded["text"] == "hello streaming tool"
     assert recorded["voice_id"] == "voice-demo"
     assert recorded["auto_play"] is True

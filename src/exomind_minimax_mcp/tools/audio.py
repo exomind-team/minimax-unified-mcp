@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 from typing import Iterator
 
@@ -105,11 +106,11 @@ def text_to_audio(
         raise ValueError("audio payload is empty")
 
     if effective_resource_mode == RESOURCE_MODE_URL:
-        output = f"Success. Audio URL: {audio_data}"
+        output = "Success"
         if auto_play:
             play_result = play_audio(audio_data, is_url=True, streaming=play_streaming)
             return f"{output}. Auto-play: {play_result}"
-        return output
+        return f"Success. Audio URL: {audio_data}"
 
     audio_bytes = bytes.fromhex(audio_data)
     output_path = build_output_path(output_directory, effective_base_path)
@@ -140,7 +141,8 @@ def text_to_audio_streaming(
 ) -> str:
     """Low-latency TTS + streaming playback（低延迟 TTS 流式播放） wrapper."""
 
-    return text_to_audio(
+    start = time.perf_counter()
+    result = text_to_audio(
         text=text,
         voice_id=voice_id,
         model=model,
@@ -158,6 +160,8 @@ def text_to_audio_streaming(
         play_streaming=True,
         api_client=api_client,
     )
+    elapsed = time.perf_counter() - start
+    return f"Latency（延迟）: {elapsed:.2f}s | {result}"
 
 
 def list_voices(
@@ -260,7 +264,7 @@ def play_audio(
                 response.close()
         else:
             play(download_bytes(input_file_path))
-        return f"Successfully played audio file: {input_file_path}"
+        return "Successfully played remote audio stream"
 
     file_path = process_input_file(input_file_path)
     if streaming:
