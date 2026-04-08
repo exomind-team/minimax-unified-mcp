@@ -78,3 +78,33 @@ def test_understand_image_accepts_local_file_and_url(tmp_path, monkeypatch):
     assert local_payload["image_url"].startswith("data:image/png;base64,")
     assert base64.b64decode(local_payload["image_url"].split(",", 1)[1]) == image_bytes
     assert url_payload["image_url"].startswith("data:image/png;base64,")
+
+
+def test_understand_image_accepts_official_image_source_alias(monkeypatch):
+    from exomind_minimax_mcp.tools.token_plan import understand_image
+
+    class FakeResponse:
+        headers = {"content-type": "image/png", "content-length": "16"}
+
+        def raise_for_status(self):
+            return None
+
+        def iter_content(self, chunk_size):
+            yield b"alias-image-bytes"
+
+    monkeypatch.setattr(
+        "exomind_minimax_mcp.image_utils.requests.get",
+        lambda *args, **kwargs: FakeResponse(),
+    )
+
+    client = StubApiClient({"content": "alias ok"})
+
+    result = understand_image(
+        prompt="describe alias image",
+        image_source="https://example.com/alias.png",
+        api_client=client,
+    )
+
+    assert result == "alias ok"
+    assert client.calls[0][0] == "/v1/coding_plan/vlm"
+    assert client.calls[0][1]["image_url"].startswith("data:image/png;base64,")

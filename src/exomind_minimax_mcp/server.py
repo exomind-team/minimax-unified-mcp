@@ -52,15 +52,15 @@ def create_mcp() -> FastMCP:
     @mcp.tool(
         description=(
             "Analyze an image with official MiniMax Token Plan VLM（官方图片理解）. "
-            "Use image_url, with image_source kept as a compatibility alias."
+            "Use image_source（图片来源 / 本地路径 / data URL） exactly like the official Token Plan MCP. "
+            "The source can be a local file path or HTTP/HTTPS URL（可传本地路径或 URL）."
         )
     )
     def understand_image_tool(
         prompt: str,
-        image_url: str | None = None,
-        image_source: str | None = None,
+        image_source: str,
     ) -> str:
-        return understand_image(prompt=prompt, image_url=image_url, image_source=image_source)
+        return understand_image(prompt=prompt, image_source=image_source)
 
     @mcp.tool(description="Convert text to audio（文本转语音） with MiniMax speech models.")
     def text_to_audio_tool(
@@ -122,13 +122,32 @@ def create_mcp() -> FastMCP:
     ) -> str:
         return play_audio(input_file_path=input_file_path, is_url=is_url, streaming=streaming)
 
-    @mcp.tool(description="Generate a video（生成视频） with MiniMax video models.")
+    @mcp.tool(
+        description=(
+            "Generate a video（生成视频） with MiniMax video models. "
+            "Use `MiniMax-Hailuo-2.3` for text-to-video by default. "
+            "If you choose `MiniMax-Hailuo-2.3-Fast`, you should also provide "
+            "`first_frame_image`（首帧图片） as a local path, URL, or data URL."
+        )
+    )
     def generate_video_tool(
         prompt: str,
         model: str = DEFAULT_T2V_MODEL,
+        first_frame_image: str | None = None,
+        duration: int | None = None,
+        resolution: str | None = None,
+        output_directory: str | None = None,
         async_mode: bool = False,
     ) -> str:
-        return generate_video(prompt=prompt, model=model, async_mode=async_mode)
+        return generate_video(
+            prompt=prompt,
+            model=model,
+            first_frame_image=first_frame_image,
+            duration=duration,
+            resolution=resolution,
+            output_directory=output_directory,
+            async_mode=async_mode,
+        )
 
     @mcp.tool(description="Query video generation status（查询视频生成状态）.")
     def query_video_generation_tool(task_id: str, output_directory: str | None = None) -> str:

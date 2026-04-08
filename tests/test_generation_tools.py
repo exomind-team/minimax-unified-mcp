@@ -10,7 +10,7 @@ class StubGenerationClient:
         self.post_calls: list[tuple[str, dict]] = []
         self.get_calls: list[str] = []
 
-    def post_json(self, endpoint: str, payload: dict) -> dict:
+    def post_json(self, endpoint: str, payload: dict, timeout: int | None = None) -> dict:
         self.post_calls.append((endpoint, payload))
         return self.post_responses.pop(0)
 
@@ -32,8 +32,25 @@ def test_generate_video_async_returns_task_id():
 
     assert client.post_calls[0][0] == "/v1/video_generation"
     assert client.post_calls[0][1]["prompt"] == "a robot walking in rain"
-    assert client.post_calls[0][1]["model"] == "MiniMax-Hailuo-2.3-Fast"
+    assert client.post_calls[0][1]["model"] == "MiniMax-Hailuo-2.3"
     assert "task-123" in output
+
+
+def test_generate_video_fast_model_requires_first_frame():
+    from exomind_minimax_mcp.tools.generation import generate_video
+
+    try:
+        generate_video(
+            prompt="a sleepy orange cat",
+            model="MiniMax-Hailuo-2.3-Fast",
+            async_mode=True,
+            api_client=StubGenerationClient(post_responses=[{"task_id": "unused"}]),
+        )
+    except ValueError as exc:
+        assert "first_frame_image" in str(exc)
+        assert "MiniMax-Hailuo-2.3" in str(exc)
+    else:
+        raise AssertionError("expected fast model validation error")
 
 
 def test_text_to_image_saves_files_in_local_mode(tmp_path, monkeypatch):
@@ -93,6 +110,31 @@ def test_music_generation_uses_default_music_model(tmp_path):
     assert client.post_calls[0][0] == "/v1/music_generation"
     assert client.post_calls[0][1]["model"] == "music-2.5"
     assert "Music saved as:" in output
+
+
+def test_music_generation_uses_extended_timeout_for_slow_endpoint():
+    from exomind_minimax_mcp.tools.generation import music_generation
+
+    class TimeoutAwareClient(StubGenerationClient):
+        def __init__(self):
+            super().__init__(post_responses=[{"data": {"audio": ""}}])
+            self.post_json_calls: list[tuple[str, dict, int | None]] = []
+
+        def post_json(self, endpoint: str, payload: dict, timeout: int | None = None) -> dict:
+            self.post_json_calls.append((endpoint, payload, timeout))
+            return {"data": {"audio": "https://example.com/music.mp3"}}
+
+    client = TimeoutAwareClient()
+
+    output = music_generation(
+        prompt="gentle ambient piano",
+        lyrics="hello world hello world",
+        resource_mode="url",
+        api_client=client,
+    )
+
+    assert output == "Success. Music url: https://example.com/music.mp3"
+    assert client.post_json_calls[0][2] == 120
 
 
 def test_voice_design_saves_trial_audio(tmp_path):

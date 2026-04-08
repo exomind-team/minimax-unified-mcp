@@ -12,10 +12,12 @@
 - `get_token_plan_quota`：查询 Token Plan 额度
 - `web_search`：官方网页搜索
 - `understand_image`：官方图片理解
+  - MCP 对齐官方 Token Plan 签名：必填 `image_source`（URL / 本地路径 / data URL）
 - `text_to_audio`：文本转语音，默认模型 `speech-2.8-hd`
 - `text_to_audio`：支持 `auto_play=true`，拿到 TTS 结果后立刻自动播放
 - `text_to_audio_streaming`：专用低延迟 TTS 流式播放工具
-- `generate_video`：默认模型 `MiniMax-Hailuo-2.3-Fast`
+- `generate_video`：默认模型 `MiniMax-Hailuo-2.3`
+  - `MiniMax-Hailuo-2.3-Fast` 应配合 `first_frame_image` 使用，适合图生视频（image-to-video）
 - `list_voices`：列出可用音色
 - `voice_clone`：声音克隆
 - `play_audio`：支持流式播放（streaming play，边下边播）
@@ -23,6 +25,64 @@
 - `text_to_image`：图片生成，默认模型 `image-01`
 - `music_generation`：音乐生成，默认模型 `music-2.5`
 - `voice_design`：声音设计
+
+## 推荐使用方式
+
+优先按下面这些工作流使用：
+
+1. `web_search`
+   - 用于查最新网页信息、文档、新闻、产品资料、外部知识。
+
+```json
+{
+  "query": "MiniMax Token Plan 最新图片模型"
+}
+```
+
+2. `understand_image`
+   - 严格对齐官方 Token Plan MCP 用法：传 `prompt` + `image_source`
+   - `image_source` 支持：
+     - 本地路径，例如 `D:/images/demo.png`
+     - HTTP / HTTPS 图片 URL
+     - `data:` URL
+
+```json
+{
+  "prompt": "描述这张截图里的界面结构",
+  "image_source": "D:/images/screenshot.png"
+}
+```
+
+3. `text_to_image` 后接 `understand_image`
+   - 先生成图片
+   - 从返回结果里复制一个图片 URL
+   - 再把这个 URL 填进 `image_source` 做图片理解
+
+4. `text_to_audio_streaming`
+   - 如果你关心低体感延迟，优先直接用这个工具
+   - 如果你需要更细的参数控制，比如 `resource_mode`、本地输出、自动播放，再用 `text_to_audio`
+
+5. 本地落盘模式
+   - 想把音频 / 图片 / 视频直接保存到本地时，设置 `MINIMAX_API_RESOURCE_MODE=local`
+   - 同时配置 `MINIMAX_MCP_BASE_PATH`，把输出统一收口到固定目录
+
+6. `generate_video`
+   - 默认文生视频（text-to-video）路径使用 `MiniMax-Hailuo-2.3`
+   - 如果你手动选择 `MiniMax-Hailuo-2.3-Fast`，需要同时传 `first_frame_image`
+   - 图生视频示例：
+
+```json
+{
+  "prompt": "一只可爱的橘猫在阳光下睡觉",
+  "model": "MiniMax-Hailuo-2.3-Fast",
+  "first_frame_image": "D:/images/cat.png",
+  "async_mode": true
+}
+```
+
+7. `music_generation`
+   - 音乐生成通常比普通文本接口更慢
+   - unified 版已经对这个接口放宽了请求超时，但真实耗时仍然取决于远端服务状态
 
 ## 安装
 
@@ -61,6 +121,15 @@ python -m pip install -e .
 ```
 
 也可以直接看 [mcp_server_config_demo.json](./mcp_server_config_demo.json)。
+
+## 开源说明
+
+当前仓库使用 MIT License（MIT 许可证）。
+
+- 项目许可证：[LICENSE](./LICENSE)
+- 第三方声明：[THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md)
+- 贡献指南：[CONTRIBUTING.md](./CONTRIBUTING.md)
+- 安全策略：[SECURITY.md](./SECURITY.md)
 
 ## 测试
 

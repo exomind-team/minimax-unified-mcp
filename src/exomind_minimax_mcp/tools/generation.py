@@ -10,6 +10,7 @@ from exomind_minimax_mcp.constants import (
     DEFAULT_BITRATE,
     DEFAULT_FORMAT,
     DEFAULT_MUSIC_MODEL,
+    DEFAULT_MUSIC_TIMEOUT_SECONDS,
     DEFAULT_SAMPLE_RATE,
     DEFAULT_T2I_MODEL,
     DEFAULT_T2V_MODEL,
@@ -34,6 +35,11 @@ def generate_video(
 ) -> str:
     if not prompt:
         raise ValueError("prompt is required")
+    if model == "MiniMax-Hailuo-2.3-Fast" and not first_frame_image:
+        raise ValueError(
+            "model MiniMax-Hailuo-2.3-Fast requires first_frame_image; "
+            "use MiniMax-Hailuo-2.3 for Text-to-Video mode"
+        )
 
     client = _get_multimodal_client(api_client)
     payload = {"model": model, "prompt": prompt}
@@ -160,6 +166,7 @@ def music_generation(
             },
             **({"output_format": "url"} if resource_mode == RESOURCE_MODE_URL else {}),
         },
+        timeout=DEFAULT_MUSIC_TIMEOUT_SECONDS,
     )
     audio_payload = response_data.get("data", {}).get("audio", "")
     if resource_mode == RESOURCE_MODE_URL:

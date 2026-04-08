@@ -5,6 +5,7 @@ import subprocess
 from types import SimpleNamespace
 
 import requests
+import pytest
 
 
 def test_quota_client_builds_required_cloudflare_headers():
@@ -83,3 +84,41 @@ def test_quota_client_falls_back_to_requests_when_curl_missing(monkeypatch):
     monkeypatch.setattr(quota_module.subprocess, "run", unexpected_run)
 
     assert client.fetch_remains() == payload
+
+
+def test_base_client_maps_usage_limit_error_to_clear_message():
+    from exomind_minimax_mcp.clients.base import MiniMaxBaseClient
+    from exomind_minimax_mcp.exceptions import MiniMaxRequestError
+
+    class DummyResponse:
+        headers = {"Trace-Id": "trace-2056"}
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"base_resp": {"status_code": 2056, "status_msg": "usage limit exceeded"}}
+
+    client = MiniMaxBaseClient(api_key="demo", base_url="https://example.com")
+
+    with pytest.raises(MiniMaxRequestError, match="usage limit exceeded"):
+        client._parse_json_response(DummyResponse())
+
+
+def test_base_client_maps_insufficient_balance_error_to_clear_message():
+    from exomind_minimax_mcp.clients.base import MiniMaxBaseClient
+    from exomind_minimax_mcp.exceptions import MiniMaxRequestError
+
+    class DummyResponse:
+        headers = {"Trace-Id": "trace-1008"}
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"base_resp": {"status_code": 1008, "status_msg": "insufficient balance"}}
+
+    client = MiniMaxBaseClient(api_key="demo", base_url="https://example.com")
+
+    with pytest.raises(MiniMaxRequestError, match="insufficient balance"):
+        client._parse_json_response(DummyResponse())

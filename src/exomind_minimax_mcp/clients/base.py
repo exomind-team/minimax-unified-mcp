@@ -27,15 +27,26 @@ class MiniMaxBaseClient:
     def post(self, endpoint: str, **kwargs: Any) -> requests.Response:
         return self.session.post(f"{self.base_url}{endpoint}", **kwargs)
 
-    def request_json(self, method: str, endpoint: str, **kwargs: Any) -> dict[str, Any]:
-        response = self.session.request(method, f"{self.base_url}{endpoint}", timeout=30, **kwargs)
+    def request_json(
+        self,
+        method: str,
+        endpoint: str,
+        timeout: int = 30,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        response = self.session.request(method, f"{self.base_url}{endpoint}", timeout=timeout, **kwargs)
         return self._parse_json_response(response)
 
-    def post_json(self, endpoint: str, payload: dict[str, Any]) -> dict[str, Any]:
-        return self.request_json("POST", endpoint, json=payload)
+    def post_json(
+        self,
+        endpoint: str,
+        payload: dict[str, Any],
+        timeout: int = 30,
+    ) -> dict[str, Any]:
+        return self.request_json("POST", endpoint, json=payload, timeout=timeout)
 
-    def get_json(self, endpoint: str) -> dict[str, Any]:
-        response = self.session.get(f"{self.base_url}{endpoint}", timeout=30)
+    def get_json(self, endpoint: str, timeout: int = 30) -> dict[str, Any]:
+        response = self.session.get(f"{self.base_url}{endpoint}", timeout=timeout)
         return self._parse_json_response(response)
 
     def _parse_json_response(self, response: requests.Response) -> dict[str, Any]:
@@ -49,6 +60,17 @@ class MiniMaxBaseClient:
             if status_code == 1004:
                 raise MiniMaxAuthError(
                     f"API Error: {status_msg}, please check your API key and API host. Trace-Id: {trace_id}"
+                )
+            if status_code == 1008:
+                raise MiniMaxRequestError(
+                    "API Error: insufficient balance（余额不足）. "
+                    f"Upstream: {status_msg}. Trace-Id: {trace_id}"
+                )
+            if status_code == 2056:
+                raise MiniMaxRequestError(
+                    "API Error: usage limit exceeded（额度或用量已耗尽）. "
+                    "Please wait for quota refresh or switch models / plans（请等待额度刷新或切换模型 / 套餐）. "
+                    f"Upstream: {status_msg}. Trace-Id: {trace_id}"
                 )
             raise MiniMaxRequestError(f"API Error: {status_code}-{status_msg} Trace-Id: {trace_id}")
         return data

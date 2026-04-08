@@ -21,6 +21,11 @@ keywords = [
     "text-to-speech",
     "web-search",
 ]
+[project.urls]
+Homepage = "https://github.com/exomind-team/minimax-unified-mcp"
+Repository = "https://github.com/exomind-team/minimax-unified-mcp"
+Issues = "https://github.com/exomind-team/minimax-unified-mcp/issues"
+
 requires-python = ">=3.10"
 dependencies = [
     "mcp[cli]>=1.6.0",
