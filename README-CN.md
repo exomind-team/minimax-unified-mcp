@@ -1,107 +1,69 @@
+<div align="center">
+
 # MiniMax Unified MCP
 
-这是 ExoMind Team 的统一版 MiniMax MCP（统一 MiniMax MCP）项目。
+⚡ 面向 ExoMind 与通用 MCP 客户端的统一 MiniMax MCP 服务。
 
-它把三类能力收进了一个本地可安装的 MCP 工具里：
-- 官方多模态 MiniMax MCP
-- 官方 Token Plan 工具：`web_search`、`understand_image`
-- 来自团队日记线索的 Token Plan 额度查询（quota / 额度）
+[![MIT License](https://img.shields.io/badge/license-MIT-2563eb.svg)](./LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10%2B-0f766e.svg)](./pyproject.toml)
+[![Tests](https://img.shields.io/github/actions/workflow/status/exomind-team/minimax-unified-mcp/test.yml?branch=master&label=tests)](./.github/workflows/test.yml)
+[![MCP](https://img.shields.io/badge/protocol-MCP-7c3aed.svg)](https://modelcontextprotocol.io/)
+[![MiniMax](https://img.shields.io/badge/provider-MiniMax-f97316.svg)](https://www.minimax.io/)
 
-## 当前能力
+[English](./README.md) | 简体中文
 
-- `get_token_plan_quota`：查询 Token Plan 额度
-- `web_search`：官方网页搜索
-- `understand_image`：官方图片理解
-  - MCP 对齐官方 Token Plan 签名：必填 `image_source`（URL / 本地路径 / data URL）
-- `text_to_audio`：文本转语音，默认模型 `speech-2.8-hd`
-- `text_to_audio`：支持 `auto_play=true`，拿到 TTS 结果后立刻自动播放
-- `text_to_audio_streaming`：专用低延迟 TTS 流式播放工具
-- `generate_video`：默认模型 `MiniMax-Hailuo-2.3`
-  - `MiniMax-Hailuo-2.3-Fast` 应配合 `first_frame_image` 使用，适合图生视频（image-to-video）
-- `list_voices`：列出可用音色
-- `voice_clone`：声音克隆
-- `play_audio`：支持流式播放（streaming play，边下边播）
-- `query_video_generation`：查询视频任务状态
-- `text_to_image`：图片生成，默认模型 `image-01`
-- `music_generation`：音乐生成，默认模型 `music-2.5`
-- `voice_design`：声音设计
+</div>
 
-## 推荐使用方式
+## ✨ 项目简介
 
-优先按下面这些工作流使用：
+`minimax-unified-mcp` 把三类能力统一进一个可安装的 MCP 服务：
 
-1. `web_search`
-   - 用于查最新网页信息、文档、新闻、产品资料、外部知识。
+- 官方多模态 MiniMax 生成能力
+- 官方 Token Plan 工具：`web_search` 与 `understand_image`
+- 面向 ExoMind 团队工作流的 Token Plan 额度查询
 
-```json
-{
-  "query": "MiniMax Token Plan 最新图片模型"
-}
-```
+它适合本地优先地接入 Claude、Codex 以及其他兼容 MCP 的客户端。
 
-2. `understand_image`
-   - 严格对齐官方 Token Plan MCP 用法：传 `prompt` + `image_source`
-   - `image_source` 支持：
-     - 本地路径，例如 `D:/images/demo.png`
-     - HTTP / HTTPS 图片 URL
-     - `data:` URL
+## 🧰 当前工具
 
-```json
-{
-  "prompt": "描述这张截图里的界面结构",
-  "image_source": "D:/images/screenshot.png"
-}
-```
+| 工具 | 作用 |
+| --- | --- |
+| `quota_tool` | 查询 Token Plan 额度与刷新窗口 |
+| `web_search_tool` | 使用 Token Plan 做网页搜索 |
+| `understand_image_tool` | 分析本地图片路径、远程 URL 或 `data:` URL |
+| `text_to_audio_tool` | 文本转语音，支持本地或 URL 输出 |
+| `text_to_audio_streaming_tool` | 低延迟 TTS 流式播放 |
+| `list_voices_tool` | 查看可用音色 |
+| `voice_clone_tool` | 基于样本音频克隆声音 |
+| `play_audio_tool` | 播放本地或远程音频 |
+| `generate_video_tool` | 文生视频或图生视频 |
+| `query_video_generation_tool` | 查询视频生成状态 |
+| `text_to_image_tool` | 图片生成 |
+| `music_generation_tool` | 基于提示词和歌词生成音乐 |
+| `voice_design_tool` | 声音设计 |
 
-3. `text_to_image` 后接 `understand_image`
-   - 先生成图片
-   - 从返回结果里复制一个图片 URL
-   - 再把这个 URL 填进 `image_source` 做图片理解
+## 🚀 快速开始
 
-4. `text_to_audio_streaming`
-   - 如果你关心低体感延迟，优先直接用这个工具
-   - 如果你需要更细的参数控制，比如 `resource_mode`、本地输出、自动播放，再用 `text_to_audio`
-
-5. 本地落盘模式
-   - 想把音频 / 图片 / 视频直接保存到本地时，设置 `MINIMAX_API_RESOURCE_MODE=local`
-   - 同时配置 `MINIMAX_MCP_BASE_PATH`，把输出统一收口到固定目录
-
-6. `generate_video`
-   - 默认文生视频（text-to-video）路径使用 `MiniMax-Hailuo-2.3`
-   - 如果你手动选择 `MiniMax-Hailuo-2.3-Fast`，需要同时传 `first_frame_image`
-   - 图生视频示例：
-
-```json
-{
-  "prompt": "一只可爱的橘猫在阳光下睡觉",
-  "model": "MiniMax-Hailuo-2.3-Fast",
-  "first_frame_image": "D:/images/cat.png",
-  "async_mode": true
-}
-```
-
-7. `music_generation`
-   - 音乐生成通常比普通文本接口更慢
-   - unified 版已经对这个接口放宽了请求超时，但真实耗时仍然取决于远端服务状态
-
-## 安装
+### 1. 安装
 
 ```powershell
 cd <repo-root>
-python -m pip install -e .
+python -m pip install -e ".[dev]"
 ```
 
-## 环境变量
+### 2. 配置环境变量
 
-参考 `.env.example`。
+把 `.env.example` 复制成 `.env`，再填入自己的配置。
 
-重点变量：
-- `MINIMAX_TOKEN_PLAN_API_KEY`：Token Plan 专用 Key
-- `MINIMAX_API_HOST`：接口地址，支持 `https://api.minimax.io` 或 `https://api.minimaxi.com`
-- `MINIMAX_MCP_BASE_PATH`：本地输出目录
-- `MINIMAX_API_RESOURCE_MODE`：资源模式，`url` 或 `local`
+关键变量：
 
-## MCP 配置示例
+- `MINIMAX_TOKEN_PLAN_API_KEY`：Token Plan API Key
+- `MINIMAX_API_HOST`：`https://api.minimax.io` 或 `https://api.minimaxi.com`
+- `MINIMAX_MCP_BASE_PATH`：本地落盘根目录
+- `MINIMAX_API_RESOURCE_MODE`：`url` 或 `local`
+- `FASTMCP_LOG_LEVEL`：日志级别，通常为 `WARNING` 或 `INFO`
+
+### 3. 配置到 MCP 客户端
 
 ```json
 {
@@ -113,62 +75,134 @@ python -m pip install -e .
         "MINIMAX_TOKEN_PLAN_API_KEY": "YOUR_TOKEN_PLAN_KEY",
         "MINIMAX_API_HOST": "https://api.minimax.io",
         "MINIMAX_MCP_BASE_PATH": "./output/minimax",
-        "MINIMAX_API_RESOURCE_MODE": "local"
+        "MINIMAX_API_RESOURCE_MODE": "local",
+        "FASTMCP_LOG_LEVEL": "WARNING"
       }
     }
   }
 }
 ```
 
-也可以直接看 [mcp_server_config_demo.json](./mcp_server_config_demo.json)。
+也可以直接参考 [mcp_server_config_demo.json](./mcp_server_config_demo.json)。
 
-## 开源说明
+## 🧭 推荐使用方式
 
-当前仓库使用 MIT License（MIT 许可证）。
+### 网页搜索
 
-- 项目许可证：[LICENSE](./LICENSE)
-- 第三方声明：[THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md)
-- 贡献指南：[CONTRIBUTING.md](./CONTRIBUTING.md)
-- 安全策略：[SECURITY.md](./SECURITY.md)
+使用 `web_search_tool` 查询最新的外部信息。
 
-## 测试
+```json
+{
+  "query": "MiniMax Token Plan 最新图片模型"
+}
+```
+
+### 图片理解
+
+严格对齐官方 Token Plan MCP 的签名：`prompt` + `image_source`。
+
+`image_source` 支持：
+
+- 本地路径，例如 `D:/images/demo.png`
+- HTTP / HTTPS 图片 URL
+- `data:` URL
+
+```json
+{
+  "prompt": "描述这张截图里的界面结构",
+  "image_source": "D:/images/screenshot.png"
+}
+```
+
+### 先生成图，再理解图
+
+1. 调用 `text_to_image_tool`
+2. 复制返回结果中的一个图片 URL
+3. 将该 URL 传入 `understand_image_tool.image_source`
+
+### 低延迟 TTS
+
+如果优先考虑体感延迟，优先用 `text_to_audio_streaming_tool`。
+
+```json
+{
+  "text": "hello from MiniMax"
+}
+```
+
+如果你需要更细的控制，比如 `resource_mode`、本地输出或自动播放，再用 `text_to_audio_tool`。
+
+### 视频生成
+
+- 默认文生视频路径使用 `MiniMax-Hailuo-2.3`
+- 如果手动选择 `MiniMax-Hailuo-2.3-Fast`，必须同时传 `first_frame_image`
+- `first_frame_image` 支持本地路径、URL 或 `data:` URL
+
+```json
+{
+  "prompt": "一只可爱的橘猫在阳光下睡觉",
+  "model": "MiniMax-Hailuo-2.3-Fast",
+  "first_frame_image": "D:/images/cat.png",
+  "async_mode": true
+}
+```
+
+### 音乐生成
+
+音乐生成通常比普通文本接口更慢。unified 版已经对该接口放宽了超时时间，但真实耗时仍然取决于上游服务状态。
+
+## ⚙️ 文档导航
+
+详细文档入口：
+
+- [使用说明（中文）](./docs/USAGE-CN.md)
+- [配置说明（中文）](./docs/CONFIGURATION-CN.md)
+- [Usage Guide (English)](./docs/USAGE.md)
+- [Configuration Guide (English)](./docs/CONFIGURATION.md)
+- [Release Guide](./docs/RELEASE.md)
+
+## 📦 输出模式
+
+支持两种输出模式：
+
+- `url`：直接返回远程资源 URL
+- `local`：下载到 `MINIMAX_MCP_BASE_PATH`
+
+如果你希望后续自动化流程稳定消费本地文件，建议使用 `local`。
+
+## 🛡️ 错误与额度提示
+
+统一客户端会保留上游错误，并对常见账户状态给出更清楚的提示：
+
+- `1008 insufficient balance`：明确显示为余额不足
+- `2056 usage limit exceeded`：明确显示为额度或用量已耗尽
+- `2013 invalid params`：保留原始参数错误，例如视频模式与模型组合不支持
+
+## ✅ 测试
+
+运行完整测试：
 
 ```powershell
 python -m pytest -v
 ```
 
-真实在线矩阵测试：
+运行真实在线矩阵：
 
 ```powershell
 python scripts/run_live_api_matrix.py --json
 ```
 
-这个脚本会用 `MINIMAX_TOKEN_PLAN_API_KEY` 依次调用全部工具，并把结果归类成 `passed`、`unsupported`、`insufficient_balance`、`usage_limit_exceeded`、`timeout`、`invalid_params` 等状态。
+在线矩阵会把结果归类成 `passed`、`unsupported`、`insufficient_balance`、`usage_limit_exceeded`、`timeout`、`invalid_params` 等状态。
 
-## 低延迟 TTS 自动播放
+## 🌍 开源说明
 
-如果要尽量降低体感等待时间，直接调用 `text_to_audio` 并传：
+当前仓库使用 MIT License（MIT 许可证）。
 
-```json
-{
-  "text": "hello from MiniMax",
-  "auto_play": true,
-  "play_streaming": true
-}
-```
+- 许可证：[LICENSE](./LICENSE)
+- 第三方声明：[THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md)
+- 贡献指南：[CONTRIBUTING.md](./CONTRIBUTING.md)
+- 安全策略：[SECURITY.md](./SECURITY.md)
 
-当你没有显式指定 `resource_mode` 时，这个调用会临时优先走 URL 输出，再把拿到的音频 URL 直接交给流式播放链路，实现“拿到 URL 就边下边播”。
+## 📌 当前状态
 
-如果你想直接使用专用工具，也可以直接调用 `text_to_audio_streaming`，它内部固定采用这条低延迟链路。
-
-当前自动化测试覆盖：
-- 配置解析
-- Token Plan 额度格式化
-- Token Plan 搜索与图片理解 payload
-- 音频 payload 与流式播放
-- 视频、图片、音乐、声音设计的 payload 和本地落盘
-- CLI / server 烟测
-
-## 状态
-
-这个仓库现在已经脱离 `uvx` 作为本地开发入口，统一运行时包位于 `src/exomind_minimax_mcp/`。真实在线矩阵测试可以通过 `scripts/run_live_api_matrix.py` 执行。
+当前运行时包位于 `src/exomind_minimax_mcp/`，本地开发已经不再依赖 `uvx`。仓库现在已经具备 GitHub Release 发布和持续维护的基础结构。

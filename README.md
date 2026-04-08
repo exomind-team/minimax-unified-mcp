@@ -1,109 +1,69 @@
+<div align="center">
+
 # MiniMax Unified MCP
 
-Unified MiniMax MCP server for ExoMind Team.
+⚡ Unified MiniMax MCP for multimodal generation, Token Plan search, and image understanding.
 
-This project merges:
-- Official multimodal MiniMax MCP capabilities
+[![MIT License](https://img.shields.io/badge/license-MIT-2563eb.svg)](./LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10%2B-0f766e.svg)](./pyproject.toml)
+[![Tests](https://img.shields.io/github/actions/workflow/status/exomind-team/minimax-unified-mcp/test.yml?branch=master&label=tests)](./.github/workflows/test.yml)
+[![MCP](https://img.shields.io/badge/protocol-MCP-7c3aed.svg)](https://modelcontextprotocol.io/)
+[![MiniMax](https://img.shields.io/badge/provider-MiniMax-f97316.svg)](https://www.minimax.io/)
+
+English | [简体中文](./README-CN.md)
+
+</div>
+
+## ✨ Overview
+
+`minimax-unified-mcp` merges three capability groups into one installable MCP server:
+
+- Official multimodal MiniMax generation tools
 - Official Token Plan tools: `web_search` and `understand_image`
-- Token Plan quota lookup via the remains endpoint recorded in the team diary
+- Token Plan quota lookup aligned with the ExoMind Team workflow
 
-## Features
+This repository is intended for local-first MCP usage in Claude, Codex, and compatible MCP clients.
 
-- `get_token_plan_quota`: query Token Plan quota / Token Plan 额度查询
-- `web_search`: official Token Plan web search / 官方网页搜索
-- `understand_image`: official Token Plan image understanding / 官方图片理解
-  - MCP follows the official Token Plan signature: required `image_source` (`URL / local path / data URL`) / MCP 对齐官方 Token Plan 签名：必填 `image_source`（链接 / 本地路径 / data URL）
-- `text_to_audio`: speech generation with default `speech-2.8-hd`
-- `text_to_audio` also supports `auto_play=true` for immediate playback after TTS response
-- `text_to_audio_streaming`: dedicated low-latency TTS streaming playback tool
-- `generate_video`: default model `MiniMax-Hailuo-2.3`
-  - `MiniMax-Hailuo-2.3-Fast` should be used with `first_frame_image` for image-to-video workflows
-- `list_voices`
-- `voice_clone`
-- `play_audio` with streaming playback
-- `query_video_generation`
-- `text_to_image` with default model `image-01`
-- `music_generation` with default model `music-2.5`
-- `voice_design`
+## 🧰 Tools
 
-## Recommended Usage
+| Tool | Purpose |
+| --- | --- |
+| `quota_tool` | Query Token Plan quota and refresh window |
+| `web_search_tool` | Search the live web via Token Plan |
+| `understand_image_tool` | Analyze a local image path, remote URL, or `data:` URL |
+| `text_to_audio_tool` | Generate speech with configurable output mode |
+| `text_to_audio_streaming_tool` | Low-latency speech playback path |
+| `list_voices_tool` | List available voices |
+| `voice_clone_tool` | Clone a voice from sample audio |
+| `play_audio_tool` | Play local or remote audio |
+| `generate_video_tool` | Generate text-to-video or image-to-video |
+| `query_video_generation_tool` | Query video generation status |
+| `text_to_image_tool` | Generate images |
+| `music_generation_tool` | Generate music from prompt and lyrics |
+| `voice_design_tool` | Design a new voice |
 
-Use these workflows first when integrating the MCP in Claude, Codex, or other MCP clients:
+## 🚀 Quick Start
 
-1. `web_search`
-   - Use for up-to-date external information, news, docs, product lookups, and web research.
-   - Example:
-
-```json
-{
-  "query": "MiniMax Token Plan latest image model"
-}
-```
-
-2. `understand_image`
-   - Follow the official Token Plan MCP signature: pass `prompt` + `image_source`.
-   - `image_source` accepts:
-     - local file path, such as `D:/images/demo.png`
-     - HTTP/HTTPS URL
-     - `data:` URL
-   - Example:
-
-```json
-{
-  "prompt": "Describe the UI layout in this screenshot",
-  "image_source": "D:/images/screenshot.png"
-}
-```
-
-3. `text_to_image` then `understand_image`
-   - Generate first.
-   - Copy one returned image URL into `image_source`.
-   - Analyze it with `understand_image`.
-
-4. `text_to_audio_streaming`
-   - Prefer this when low perceived latency matters.
-   - Use `text_to_audio` when you need full control over `resource_mode`, local outputs, or autoplay behavior.
-
-5. Local-output workflows
-   - Set `MINIMAX_API_RESOURCE_MODE=local` when you want audio / image / video artifacts saved to disk.
-   - Set `MINIMAX_MCP_BASE_PATH` to keep all generated files under a controlled output directory.
-
-6. `generate_video`
-   - Default text-to-video path uses `MiniMax-Hailuo-2.3`.
-   - If you choose `MiniMax-Hailuo-2.3-Fast`, also provide `first_frame_image`.
-   - Example image-to-video call:
-
-```json
-{
-  "prompt": "A cute orange cat sleeping in sunlight",
-  "model": "MiniMax-Hailuo-2.3-Fast",
-  "first_frame_image": "D:/images/cat.png",
-  "async_mode": true
-}
-```
-
-7. `music_generation`
-   - Music generation can take longer than standard text APIs.
-   - The unified client now uses a longer request timeout for this endpoint, but live generation still depends on remote service latency.
-
-## Install
+### 1. Install
 
 ```powershell
 cd <repo-root>
-python -m pip install -e .
+python -m pip install -e ".[dev]"
 ```
 
-## Environment
+### 2. Configure environment
 
-See `.env.example`.
+Copy `.env.example` to `.env` and fill in your credentials.
 
-Key variables:
-- `MINIMAX_TOKEN_PLAN_API_KEY`: Token Plan key
+Important variables:
+
+- `MINIMAX_TOKEN_PLAN_API_KEY`: Token Plan API key
 - `MINIMAX_API_HOST`: `https://api.minimax.io` or `https://api.minimaxi.com`
-- `MINIMAX_MCP_BASE_PATH`: local output base path
+- `MINIMAX_MCP_BASE_PATH`: base path for local artifacts
 - `MINIMAX_API_RESOURCE_MODE`: `url` or `local`
+- `FASTMCP_LOG_LEVEL`: logging level, usually `WARNING` or `INFO`
 
-## Claude / Codex MCP Config
+### 3. Add to your MCP client
 
 ```json
 {
@@ -115,54 +75,54 @@ Key variables:
         "MINIMAX_TOKEN_PLAN_API_KEY": "YOUR_TOKEN_PLAN_KEY",
         "MINIMAX_API_HOST": "https://api.minimax.io",
         "MINIMAX_MCP_BASE_PATH": "./output/minimax",
-        "MINIMAX_API_RESOURCE_MODE": "local"
+        "MINIMAX_API_RESOURCE_MODE": "local",
+        "FASTMCP_LOG_LEVEL": "WARNING"
       }
     }
   }
 }
 ```
 
-See [mcp_server_config_demo.json](./mcp_server_config_demo.json).
+See [mcp_server_config_demo.json](./mcp_server_config_demo.json) for a ready-to-copy example.
 
-## Open Source
+## 🧭 Recommended Usage
 
-This repository is released under the MIT License.
+### Web search
 
-- Project license: [LICENSE](./LICENSE)
-- Third-party notices: [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md)
-- Contributing guide: [CONTRIBUTING.md](./CONTRIBUTING.md)
-- Security policy: [SECURITY.md](./SECURITY.md)
-
-## Tests
-
-```powershell
-python -m pytest -v
-```
-
-Real online matrix test（真实在线矩阵测试）:
-
-```powershell
-python scripts/run_live_api_matrix.py --json
-```
-
-The script executes every tool with `MINIMAX_TOKEN_PLAN_API_KEY` and returns classified statuses such as `passed`, `unsupported`, `insufficient_balance`, `usage_limit_exceeded`, `timeout`, and `invalid_params`.
-
-## Low-latency TTS playback
-
-For the lowest perceived delay, call `text_to_audio` with `auto_play=true`.
-If you do not explicitly set `resource_mode`, the tool will temporarily prefer URL output and immediately hand the URL to the streaming playback path.
-
-Example:
+Use `web_search_tool` for current external information.
 
 ```json
 {
-  "text": "hello from MiniMax",
-  "auto_play": true,
-  "play_streaming": true
+  "query": "MiniMax Token Plan latest image model"
 }
 ```
 
-Dedicated MCP tool:
+### Image understanding
+
+Follow the official Token Plan MCP signature: `prompt` + `image_source`.
+
+`image_source` supports:
+
+- local file path, such as `D:/images/demo.png`
+- HTTP / HTTPS image URL
+- `data:` URL
+
+```json
+{
+  "prompt": "Describe the UI structure in this screenshot",
+  "image_source": "D:/images/screenshot.png"
+}
+```
+
+### Image generation then image understanding
+
+1. Call `text_to_image_tool`
+2. Copy one returned image URL
+3. Pass that URL into `understand_image_tool.image_source`
+
+### Low-latency TTS
+
+Prefer `text_to_audio_streaming_tool` when perceived latency matters.
 
 ```json
 {
@@ -170,16 +130,79 @@ Dedicated MCP tool:
 }
 ```
 
-Call `text_to_audio_streaming` when you want the dedicated low-latency path directly.
+Use `text_to_audio_tool` when you need more control over `resource_mode`, local output, or autoplay.
 
-Current automated coverage includes:
-- config loading
-- Token Plan quota formatting
-- Token Plan search and image understanding payloads
-- audio payloads and streaming playback
-- video/image/music/voice-design payload and file handling
-- CLI and server smoke tests
+### Video generation
 
-## Status
+- Default text-to-video path uses `MiniMax-Hailuo-2.3`
+- If you choose `MiniMax-Hailuo-2.3-Fast`, also provide `first_frame_image`
+- `first_frame_image` supports local path, URL, or `data:` URL
 
-The unified package now runs from `src/exomind_minimax_mcp/` and no longer depends on `uvx` for local development. Real online matrix testing is available through `scripts/run_live_api_matrix.py`.
+```json
+{
+  "prompt": "A cute orange cat sleeping in sunlight",
+  "model": "MiniMax-Hailuo-2.3-Fast",
+  "first_frame_image": "D:/images/cat.png",
+  "async_mode": true
+}
+```
+
+### Music generation
+
+Music generation is slower than typical text APIs. The unified client uses an extended request timeout for this endpoint, but real latency still depends on upstream service status.
+
+## ⚙️ Configuration
+
+Detailed guides:
+
+- [Usage Guide](./docs/USAGE.md)
+- [Configuration Guide](./docs/CONFIGURATION.md)
+- [Release Guide](./docs/RELEASE.md)
+- [Chinese Usage Guide](./docs/USAGE-CN.md)
+- [Chinese Configuration Guide](./docs/CONFIGURATION-CN.md)
+
+## 📦 Output Modes
+
+Two output modes are supported:
+
+- `url`: return remote URLs directly
+- `local`: download artifacts to `MINIMAX_MCP_BASE_PATH`
+
+Use `local` when you want reproducible local files for downstream automation.
+
+## 🛡️ Errors and Quota Signals
+
+The unified client preserves upstream errors and improves readability for common account states:
+
+- `1008 insufficient balance`: clearly reported as balance insufficient
+- `2056 usage limit exceeded`: clearly reported as quota / usage exhausted
+- `2013 invalid params`: preserved for bad payloads such as unsupported video mode combinations
+
+## ✅ Testing
+
+Run the full suite:
+
+```powershell
+python -m pytest -v
+```
+
+Run the live API matrix:
+
+```powershell
+python scripts/run_live_api_matrix.py --json
+```
+
+The live matrix classifies results into statuses such as `passed`, `unsupported`, `insufficient_balance`, `usage_limit_exceeded`, `timeout`, and `invalid_params`.
+
+## 🌍 Open Source
+
+This repository is released under the MIT License.
+
+- License: [LICENSE](./LICENSE)
+- Third-party attribution: [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md)
+- Contributing: [CONTRIBUTING.md](./CONTRIBUTING.md)
+- Security: [SECURITY.md](./SECURITY.md)
+
+## 📌 Status
+
+The package runs from `src/exomind_minimax_mcp/` and no longer depends on `uvx` for local development. It is ready for GitHub-based release packaging and ongoing MCP client integration.

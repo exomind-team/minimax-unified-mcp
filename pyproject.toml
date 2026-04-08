@@ -6,11 +6,10 @@ authors = [
     { name = "ExoMind Team", email = "team@exomind.dev" },
 ]
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "MIT"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
 ]
@@ -21,11 +20,6 @@ keywords = [
     "text-to-speech",
     "web-search",
 ]
-[project.urls]
-Homepage = "https://github.com/exomind-team/minimax-unified-mcp"
-Repository = "https://github.com/exomind-team/minimax-unified-mcp"
-Issues = "https://github.com/exomind-team/minimax-unified-mcp/issues"
-
 requires-python = ">=3.10"
 dependencies = [
     "mcp[cli]>=1.6.0",
@@ -40,6 +34,11 @@ dependencies = [
     "soundfile>=0.13.1",
     "requests>=2.31.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/exomind-team/minimax-unified-mcp"
+Repository = "https://github.com/exomind-team/minimax-unified-mcp"
+Issues = "https://github.com/exomind-team/minimax-unified-mcp/issues"
 
 [project.scripts]
 minimax-unified-mcp = "exomind_minimax_mcp.server:main"

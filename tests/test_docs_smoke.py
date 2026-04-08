@@ -27,9 +27,16 @@ def test_open_source_docs_and_license_markers_exist():
     assert Path("CONTRIBUTING.md").exists()
     assert Path("SECURITY.md").exists()
     assert Path("THIRD_PARTY_NOTICES.md").exists()
+    assert Path("docs/USAGE.md").exists()
+    assert Path("docs/USAGE-CN.md").exists()
+    assert Path("docs/CONFIGURATION.md").exists()
+    assert Path("docs/CONFIGURATION-CN.md").exists()
+    assert Path("docs/RELEASE.md").exists()
 
     readme = Path("README.md").read_text(encoding="utf-8")
     readme_cn = Path("README-CN.md").read_text(encoding="utf-8")
 
     assert "MIT" in readme
     assert "MIT" in readme_cn
+    assert '<div align="center">' in readme
+    assert '<div align="center">' in readme_cn
