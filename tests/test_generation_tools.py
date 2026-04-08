@@ -32,6 +32,7 @@ def test_generate_video_async_returns_task_id():
 
     assert client.post_calls[0][0] == "/v1/video_generation"
     assert client.post_calls[0][1]["prompt"] == "a robot walking in rain"
+    assert client.post_calls[0][1]["model"] == "MiniMax-Hailuo-2.3-Fast"
     assert "task-123" in output
 
 
@@ -58,6 +59,7 @@ def test_text_to_image_saves_files_in_local_mode(tmp_path, monkeypatch):
     output = text_to_image(
         prompt="a red moon",
         output_directory=str(tmp_path),
+        base_path=str(tmp_path),
         resource_mode="local",
         api_client=client,
     )
@@ -76,12 +78,13 @@ def test_music_generation_uses_default_music_model(tmp_path):
         prompt="sad piano",
         lyrics="[Verse]\nhello rain",
         output_directory=str(tmp_path),
+        base_path=str(tmp_path),
         resource_mode="local",
         api_client=client,
     )
 
     assert client.post_calls[0][0] == "/v1/music_generation"
-    assert client.post_calls[0][1]["model"] == "music-2.0"
+    assert client.post_calls[0][1]["model"] == "music-2.5"
     assert "Music saved as:" in output
 
 
@@ -96,6 +99,7 @@ def test_voice_design_saves_trial_audio(tmp_path):
         prompt="warm female narrator",
         preview_text="hello there",
         output_directory=str(tmp_path),
+        base_path=str(tmp_path),
         resource_mode="local",
         api_client=client,
     )

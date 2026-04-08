@@ -126,19 +126,49 @@ def play(audio: bytes | Iterator[bytes]) -> None:
             "ffplay from ffmpeg not found; install ffmpeg first（未找到 ffplay，请先安装 ffmpeg）."
         )
 
-    proc = subprocess.Popen(
-        args=["ffplay", "-autoexit", "-", "-nodisp"],
-        stdout=subprocess.PIPE,
-        stdin=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
+    import tempfile, threading
 
     if isinstance(audio, bytes):
-        proc.stdin.write(audio)
-        proc.stdin.close()
-    else:
-        for chunk in audio:
-            proc.stdin.write(chunk)
-        proc.stdin.close()
+        # Direct: write to temp file, ffplay plays from file path (reliable -autoexit)
+        with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
+            tmp.write(audio)
+            tmp_path = tmp.name
 
-    proc.wait()
+        try:
+            proc = subprocess.Popen(
+                args=["ffplay", "-autoexit", "-nodisp", tmp_path],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            proc.wait()
+        finally:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+    else:
+        # Streaming: pipe stdin so ffplay plays as chunks arrive
+        proc = subprocess.Popen(
+            args=["ffplay", "-autoexit", "-", "-nodisp"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+        def writer():
+            try:
+                for chunk in audio:
+                    if proc.stdin.closed:
+                        break
+                    proc.stdin.write(chunk)
+                proc.stdin.close()
+            except Exception:
+                try:
+                    proc.stdin.close()
+                except Exception:
+                    pass
+
+        t = threading.Thread(target=writer, daemon=True)
+        t.start()
+        proc.wait()
+        t.join(timeout=5)

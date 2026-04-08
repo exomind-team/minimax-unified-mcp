@@ -15,7 +15,7 @@ def _get_token_plan_client(api_client: MiniMaxBaseClient | None) -> MiniMaxBaseC
 
     settings = load_settings()
     if not settings.token_plan_api_key:
-        raise ValueError("MINIMAX_TOKEN_PLAN_API_KEY or MINIMAX_API_KEY is required")
+        raise ValueError("MINIMAX_TOKEN_PLAN_API_KEY is required")
     return MiniMaxBaseClient(settings.token_plan_api_key, settings.api_host)
 
 

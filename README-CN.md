@@ -13,13 +13,14 @@
 - `web_search`：官方网页搜索
 - `understand_image`：官方图片理解
 - `text_to_audio`：文本转语音，默认模型 `speech-2.8-hd`
+- `generate_video`：默认模型 `MiniMax-Hailuo-2.3-Fast`
 - `list_voices`：列出可用音色
 - `voice_clone`：声音克隆
 - `play_audio`：支持流式播放（streaming play，边下边播）
 - `generate_video`：视频生成
 - `query_video_generation`：查询视频任务状态
-- `text_to_image`：图片生成
-- `music_generation`：音乐生成
+- `text_to_image`：图片生成，默认模型 `image-01`
+- `music_generation`：音乐生成，默认模型 `music-2.5`
 - `voice_design`：声音设计
 
 ## 安装
@@ -35,8 +36,6 @@ python -m pip install -e .
 
 重点变量：
 - `MINIMAX_TOKEN_PLAN_API_KEY`：Token Plan 专用 Key
-- `MINIMAX_PAYG_API_KEY`：按量计费 Key
-- `MINIMAX_API_KEY`：共享回退 Key
 - `MINIMAX_API_HOST`：接口地址，支持 `https://api.minimax.io` 或 `https://api.minimaxi.com`
 - `MINIMAX_MCP_BASE_PATH`：本地输出目录
 - `MINIMAX_API_RESOURCE_MODE`：资源模式，`url` 或 `local`
@@ -51,7 +50,6 @@ python -m pip install -e .
       "args": ["-m", "exomind_minimax_mcp"],
       "env": {
         "MINIMAX_TOKEN_PLAN_API_KEY": "YOUR_TOKEN_PLAN_KEY",
-        "MINIMAX_PAYG_API_KEY": "YOUR_PAYG_KEY",
         "MINIMAX_API_HOST": "https://api.minimax.io",
         "MINIMAX_MCP_BASE_PATH": "./output/minimax",
         "MINIMAX_API_RESOURCE_MODE": "local"
@@ -68,6 +66,14 @@ python -m pip install -e .
 ```powershell
 python -m pytest -v
 ```
+
+真实在线矩阵测试：
+
+```powershell
+python scripts/run_live_api_matrix.py --json
+```
+
+这个脚本会用 `MINIMAX_TOKEN_PLAN_API_KEY` 依次调用全部工具，并把结果归类成 `passed`、`unsupported`、`insufficient_balance`、`usage_limit_exceeded`、`timeout`、`invalid_params` 等状态。
 
 当前自动化测试覆盖：
 - 配置解析

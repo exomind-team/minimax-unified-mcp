@@ -8,13 +8,17 @@ from exomind_minimax_mcp.clients.quota import TokenPlanQuotaClient
 from exomind_minimax_mcp.config import load_settings
 
 
+# API 字段语义（容易混淆，注意）：
+# - current_interval_usage_count = 本轮剩余（不是已用）
+# - current_weekly_usage_count  = 本周剩余（不是已用）
+# 直接使用这两个值，无需 total 减
 DISPLAY_NAMES = {
     "MiniMax-M*": "MiniMax-M2.7-highspeed",
-    "speech-hd": "MiniMax Speech-HD",
-    "MiniMax-Hailuo-2.3-Fast-6s-768p": "MiniMax Hailuo 2.3 Fast",
-    "MiniMax-Hailuo-2.3-6s-768p": "MiniMax Hailuo 2.3",
-    "music-2.5": "MiniMax Music 2.5",
-    "image-01": "MiniMax Image-01",
+    "speech-hd": "Speech 2.8",
+    "MiniMax-Hailuo-2.3-Fast-6s-768p": "Hailuo-2.3-Fast",
+    "MiniMax-Hailuo-2.3-6s-768p": "Hailuo-2.3",
+    "music-2.5": "Music 2.5",
+    "image-01": "image-01",
 }
 
 
@@ -46,24 +50,17 @@ def _select_models(models: list[dict], model: str | None, all_models: bool) -> l
 
 
 def _format_table(models: list[dict]) -> str:
-    lines = [
-        "MiniMax Token Plan Quota",
-        "",
-        "| Model | Interval Remains | Reset In | Weekly Remains |",
-        "| --- | ---: | ---: | ---: |",
-    ]
-
+    lines = []
     for item in models:
+        interval_remains = item["current_interval_usage_count"]
+        interval_total = item["current_interval_total_count"]
+        weekly_remaining = item["current_weekly_usage_count"]
+        reset = format_duration(item["remains_time"])
+        name = resolve_display_name(item["model_name"])
         lines.append(
-            "| {model} | {interval} | {reset} | {weekly} |".format(
-                model=resolve_display_name(item["model_name"]),
-                interval=f'{item["current_interval_usage_count"]:,}/{item["current_interval_total_count"]:,}',
-                reset=format_duration(item["remains_time"]),
-                weekly=f'{item["current_weekly_usage_count"]:,}/{item["current_weekly_total_count"]:,}',
-            )
+            f"{name} 剩余 {interval_remains} / 总量 {interval_total} / 本周累计 {weekly_remaining} 剩余{reset}"
         )
-
-    return "\n".join(lines)
+    return " | ".join(lines)
 
 
 def get_token_plan_quota(
@@ -77,7 +74,7 @@ def get_token_plan_quota(
     if quota_client is None:
         settings = load_settings()
         if not settings.token_plan_api_key:
-            raise ValueError("MINIMAX_TOKEN_PLAN_API_KEY or MINIMAX_API_KEY is required")
+            raise ValueError("MINIMAX_TOKEN_PLAN_API_KEY is required")
         quota_client = TokenPlanQuotaClient(api_key=settings.token_plan_api_key)
 
     payload = quota_client.fetch_remains()

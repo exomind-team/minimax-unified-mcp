@@ -5,6 +5,7 @@ from __future__ import annotations
 from mcp.server.fastmcp import FastMCP
 
 from exomind_minimax_mcp.config import load_settings
+from exomind_minimax_mcp.constants import DEFAULT_SPEECH_MODEL, DEFAULT_T2V_MODEL
 from exomind_minimax_mcp.tools.audio import list_voices, play_audio, text_to_audio, voice_clone
 from exomind_minimax_mcp.tools.generation import (
     generate_video,
@@ -60,7 +61,7 @@ def create_mcp() -> FastMCP:
         text: str,
         output_directory: str | None = None,
         voice_id: str = "female-shaonv",
-        model: str = "speech-2.8-hd",
+        model: str = DEFAULT_SPEECH_MODEL,
     ) -> str:
         return text_to_audio(text=text, output_directory=output_directory, voice_id=voice_id, model=model)
 
@@ -95,7 +96,7 @@ def create_mcp() -> FastMCP:
     @mcp.tool(description="Generate a video（生成视频） with MiniMax video models.")
     def generate_video_tool(
         prompt: str,
-        model: str = "MiniMax-Hailuo-2.3",
+        model: str = DEFAULT_T2V_MODEL,
         async_mode: bool = False,
     ) -> str:
         return generate_video(prompt=prompt, model=model, async_mode=async_mode)

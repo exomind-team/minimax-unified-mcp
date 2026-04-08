@@ -26,6 +26,26 @@ class StubVoiceCloneClient:
         raise AssertionError(f"unexpected endpoint: {endpoint}")
 
 
+def test_multimodal_client_uses_token_plan_key_by_default(monkeypatch):
+    from exomind_minimax_mcp.tools.audio import _get_multimodal_client
+
+    captured: dict[str, str] = {}
+
+    class FakeClient:
+        def __init__(self, api_key: str, base_url: str):
+            captured["api_key"] = api_key
+            captured["base_url"] = base_url
+
+    monkeypatch.setenv("MINIMAX_TOKEN_PLAN_API_KEY", "token-plan-key")
+    monkeypatch.setenv("MINIMAX_API_HOST", "https://api.minimax.io")
+    monkeypatch.setattr("exomind_minimax_mcp.tools.audio.MiniMaxBaseClient", FakeClient)
+
+    _get_multimodal_client(None)
+
+    assert captured["api_key"] == "token-plan-key"
+    assert captured["base_url"] == "https://api.minimax.io"
+
+
 def test_text_to_audio_uses_speech_28_hd_default(tmp_path):
     from exomind_minimax_mcp.tools.audio import text_to_audio
 
@@ -34,6 +54,7 @@ def test_text_to_audio_uses_speech_28_hd_default(tmp_path):
     output = text_to_audio(
         text="hello world",
         output_directory=str(tmp_path),
+        base_path=str(tmp_path),
         resource_mode="local",
         api_client=client,
     )
@@ -41,9 +62,9 @@ def test_text_to_audio_uses_speech_28_hd_default(tmp_path):
     assert client.calls[0][0] == "/v1/t2a_v2"
     assert client.calls[0][1]["model"] == "speech-2.8-hd"
     assert "File saved as:" in output
-    saved_path = Path(output.split("File saved as: ", 1)[1].split(". Voice used:", 1)[0])
-    assert saved_path.exists()
-    assert saved_path.read_bytes() == b"ABCD"
+    saved_files = list(tmp_path.glob("*.mp3"))
+    assert len(saved_files) == 1
+    assert saved_files[0].read_bytes() == b"ABCD"
 
 
 def test_play_audio_supports_streaming_iterators(monkeypatch):
@@ -54,11 +75,13 @@ def test_play_audio_supports_streaming_iterators(monkeypatch):
     class FakeProc:
         def __init__(self):
             self.stdin = self
+            self.closed = False
 
         def write(self, chunk: bytes):
             writes.append(chunk)
 
         def close(self):
+            self.closed = True
             writes.append(b"<closed>")
 
         def wait(self):
@@ -95,6 +118,7 @@ def test_voice_clone_uploads_file_and_saves_demo_audio(tmp_path, monkeypatch):
         file=str(sample_audio),
         text="hello",
         output_directory=str(tmp_path),
+        base_path=str(tmp_path),
         resource_mode="local",
         api_client=client,
     )

@@ -16,7 +16,7 @@ from exomind_minimax_mcp.constants import (
     RESOURCE_MODE_URL,
 )
 from exomind_minimax_mcp.image_utils import normalize_image_url
-from exomind_minimax_mcp.tools.audio import _get_payg_client
+from exomind_minimax_mcp.tools.audio import _get_multimodal_client
 from exomind_minimax_mcp.utils import build_output_file, build_output_path
 
 
@@ -35,7 +35,7 @@ def generate_video(
     if not prompt:
         raise ValueError("prompt is required")
 
-    client = _get_payg_client(api_client)
+    client = _get_multimodal_client(api_client)
     payload = {"model": model, "prompt": prompt}
     if first_frame_image:
         payload["first_frame_image"] = normalize_image_url(first_frame_image)
@@ -71,7 +71,7 @@ def query_video_generation(
     base_path: str | None = None,
     api_client=None,
 ) -> str:
-    client = _get_payg_client(api_client)
+    client = _get_multimodal_client(api_client)
     response_data = client.get_json(f"/v1/query/video_generation?task_id={task_id}")
     status = response_data.get("status")
     if status == "Fail":
@@ -107,7 +107,7 @@ def text_to_image(
     if not prompt:
         raise ValueError("prompt is required")
 
-    client = _get_payg_client(api_client)
+    client = _get_multimodal_client(api_client)
     response_data = client.post_json(
         "/v1/image_generation",
         {
@@ -146,7 +146,7 @@ def music_generation(
     if not prompt or not lyrics:
         raise ValueError("prompt and lyrics are required")
 
-    client = _get_payg_client(api_client)
+    client = _get_multimodal_client(api_client)
     response_data = client.post_json(
         "/v1/music_generation",
         {
@@ -183,7 +183,7 @@ def voice_design(
     if not prompt or not preview_text:
         raise ValueError("prompt and preview_text are required")
 
-    client = _get_payg_client(api_client)
+    client = _get_multimodal_client(api_client)
     payload = {"prompt": prompt, "preview_text": preview_text}
     if voice_id:
         payload["voice_id"] = voice_id

@@ -27,14 +27,14 @@ from exomind_minimax_mcp.constants import (
 from exomind_minimax_mcp.utils import build_output_file, build_output_path, play, process_input_file
 
 
-def _get_payg_client(api_client: MiniMaxBaseClient | None) -> MiniMaxBaseClient:
+def _get_multimodal_client(api_client: MiniMaxBaseClient | None) -> MiniMaxBaseClient:
     if api_client is not None:
         return api_client
 
     settings = load_settings()
-    api_key = settings.payg_api_key or settings.default_api_key
+    api_key = settings.token_plan_api_key
     if not api_key:
-        raise ValueError("MINIMAX_PAYG_API_KEY or MINIMAX_API_KEY is required")
+        raise ValueError("MINIMAX_TOKEN_PLAN_API_KEY is required")
     return MiniMaxBaseClient(api_key, settings.api_host)
 
 
@@ -64,7 +64,7 @@ def text_to_audio(
     settings = load_settings()
     effective_resource_mode = resource_mode or settings.resource_mode
     effective_base_path = base_path or str(settings.base_path)
-    client = _get_payg_client(api_client)
+    client = _get_multimodal_client(api_client)
 
     payload = {
         "model": model,
@@ -109,7 +109,7 @@ def list_voices(
 ) -> str:
     """List available voices（列出可用声音）."""
 
-    client = _get_payg_client(api_client)
+    client = _get_multimodal_client(api_client)
     response_data = client.post_json("/v1/get_voice", {"voice_type": voice_type})
     system_voices = response_data.get("system_voice", []) or []
     voice_cloning_voices = response_data.get("voice_cloning", []) or []
@@ -135,7 +135,7 @@ def voice_clone(
     settings = load_settings()
     effective_resource_mode = resource_mode or settings.resource_mode
     effective_base_path = base_path or str(settings.base_path)
-    client = _get_payg_client(api_client)
+    client = _get_multimodal_client(api_client)
 
     if is_url:
         response = requests.get(file, stream=True)

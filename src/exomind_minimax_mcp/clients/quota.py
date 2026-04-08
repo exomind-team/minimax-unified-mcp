@@ -2,9 +2,25 @@
 
 from __future__ import annotations
 
+import json
+import os
+import shutil
+import subprocess
+
 import requests
 
+
 TOKEN_PLAN_REMAINS_URL = "https://www.minimax.io/v1/api/openplatform/coding_plan/remains"
+
+
+def _get_proxy() -> str | None:
+    """Read proxy from env（读取代理环境变量） for curl/requests."""
+
+    for var in ("http_proxy", "HTTP_PROXY", "https_proxy", "HTTPS_PROXY"):
+        value = os.environ.get(var)
+        if value:
+            return value
+    return None
 
 
 class TokenPlanQuotaClient:
@@ -28,7 +44,43 @@ class TokenPlanQuotaClient:
             "Origin": "https://www.minimax.io",
         }
 
-    def fetch_remains(self) -> dict:
-        response = requests.get(self.url, headers=self.build_headers(), timeout=15)
+    def _proxy_args(self) -> list[str]:
+        proxy = _get_proxy()
+        if proxy:
+            return ["-x", proxy]
+        return []
+
+    def _fetch_with_curl(self) -> dict:
+        args = ["curl", "-sS", "--fail", "--location", *self._proxy_args()]
+        for key, value in self.build_headers().items():
+            args.extend(["-H", f"{key}: {value}"])
+        args.append(self.url)
+
+        result = subprocess.run(args, capture_output=True, text=True, timeout=20)
+        if result.returncode != 0:
+            stderr = (result.stderr or "").strip()
+            raise RuntimeError(f"curl failed ({result.returncode}): {stderr[:200]}")
+
+        return json.loads(result.stdout)
+
+    def _fetch_with_requests(self) -> dict:
+        proxies = None
+        proxy = _get_proxy()
+        if proxy:
+            proxies = {"http": proxy, "https": proxy}
+
+        response = requests.get(
+            self.url,
+            headers=self.build_headers(),
+            timeout=20,
+            proxies=proxies,
+        )
         response.raise_for_status()
         return response.json()
+
+    def fetch_remains(self) -> dict:
+        # Cloudflare blocks Python requests for this endpoint in real usage;
+        # curl is the reliable path, with requests kept as a fallback.
+        if shutil.which("curl"):
+            return self._fetch_with_curl()
+        return self._fetch_with_requests()

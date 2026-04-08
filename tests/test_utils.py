@@ -6,6 +6,8 @@ from exomind_minimax_mcp.utils import (
     is_file_writeable,
     build_output_file,
     build_output_path,
+    download_bytes,
+    download_to_file,
     find_similar_filenames,
     try_find_similar_files,
     process_input_file,
@@ -23,7 +25,9 @@ def test_make_output_file():
     text = "hello world"
     output_path = Path("/tmp")
     result = build_output_file(tool, text, output_path, "mp3")
-    assert result.name.startswith("test_hello")
+    assert result.name.startswith("test_")
+    assert "hello" not in result.name
+    assert "world" not in result.name
     assert result.suffix == ".mp3"
 
 
@@ -45,14 +49,15 @@ def test_make_output_path():
     result = build_output_path("subdir", base_path, is_test=True)
     assert result == Path(base_path) / "subdir"
     
-    # Test with absolute output_directory (should ignore base_path)
-    abs_path = "/absolute/path"
-    result = build_output_path(abs_path, "/some/base/path", is_test=True)
-    assert result == Path(abs_path)
+    with tempfile.TemporaryDirectory() as allowed_base:
+        allowed_path = Path(allowed_base)
+        nested_path = allowed_path / "nested"
+        result = build_output_path(str(nested_path), str(allowed_path), is_test=True)
+        assert result == nested_path
 
-    abs_path = "~/absolute/path"
-    result = build_output_path(abs_path, "/some/base/path", is_test=True)
-    assert result == Path(Path.home() / "absolute/path")
+    with tempfile.TemporaryDirectory() as allowed_base, tempfile.TemporaryDirectory() as forbidden_path:
+        with pytest.raises(MiniMaxMcpError):
+            build_output_path(forbidden_path, allowed_base, is_test=True)
     
     # Test with None base_path (should use desktop)
     result = build_output_path(None, None, is_test=True)
@@ -105,3 +110,53 @@ def test_process_input_file():
 
         with pytest.raises(MiniMaxMcpError):
             process_input_file(str(temp_path / "nonexistent.mp3"))
+
+
+def test_download_bytes_rejects_oversized_payload(monkeypatch):
+    class FakeResponse:
+        headers = {"content-length": "20"}
+
+        def raise_for_status(self):
+            return None
+
+        def iter_content(self, chunk_size):
+            yield b"1234567890"
+            yield b"abcdefghij"
+
+        def close(self):
+            return None
+
+    monkeypatch.setattr(
+        "exomind_minimax_mcp.utils.requests.get",
+        lambda url, stream=True, timeout=30: FakeResponse(),
+    )
+
+    with pytest.raises(MiniMaxMcpError):
+        download_bytes("https://example.com/demo.bin", max_bytes=8)
+
+
+def test_download_to_file_streams_chunks(tmp_path, monkeypatch):
+    target = tmp_path / "sample.bin"
+
+    class FakeResponse:
+        headers = {"content-length": "6"}
+
+        def raise_for_status(self):
+            return None
+
+        def iter_content(self, chunk_size):
+            yield b"abc"
+            yield b"def"
+
+        def close(self):
+            return None
+
+    monkeypatch.setattr(
+        "exomind_minimax_mcp.utils.requests.get",
+        lambda url, stream=True, timeout=30: FakeResponse(),
+    )
+
+    written = download_to_file("https://example.com/demo.bin", target, max_bytes=8)
+
+    assert written == target
+    assert target.read_bytes() == b"abcdef"
