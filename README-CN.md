@@ -132,6 +132,15 @@ python -m pip install -e ".[dev]"
 
 如果你需要更细的控制，比如 `resource_mode`、本地输出或自动播放，再用 `text_to_audio_tool`。
 
+### 配额字段说明
+
+`quota_tool` 当前把官方返回字段按实际展示语义解释为：
+
+- `current_interval_usage_count`：本轮剩余（remaining in current interval，当前窗口剩余）
+- `current_weekly_usage_count`：本周剩余（weekly remaining，本周剩余）
+
+注意：虽然字段名里带有 `usage_count`，但这里展示的是“剩余值”，不是“本周已用”。
+
 ### 视频生成
 
 - 默认文生视频路径使用 `MiniMax-Hailuo-2.3`

@@ -132,6 +132,15 @@ Prefer `text_to_audio_streaming_tool` when perceived latency matters.
 
 Use `text_to_audio_tool` when you need more control over `resource_mode`, local output, or autoplay.
 
+### Quota field notes
+
+`quota_tool` currently maps the upstream fields to their display semantics as follows:
+
+- `current_interval_usage_count`: remaining in current interval（当前窗口剩余）
+- `current_weekly_usage_count`: weekly remaining（本周剩余）
+
+Note: even though the field name contains `usage_count`, this output is treated as remaining quota, not used quota.
+
 ### Video generation
 
 - Default text-to-video path uses `MiniMax-Hailuo-2.3`

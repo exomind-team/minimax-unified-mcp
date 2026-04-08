@@ -9,9 +9,9 @@ from exomind_minimax_mcp.config import load_settings
 
 
 # API 字段语义：
-# - current_interval_usage_count = 本轮剩余
-# - current_weekly_usage_count   = 本周剩余
-# - remains_time                = 距刷新时间
+# - current_interval_usage_count = 本轮剩余（remaining in current interval，当前窗口剩余）
+# - current_weekly_usage_count   = 本周剩余（weekly remaining，本周剩余）
+# - remains_time                = 距刷新时间（time until reset，距离刷新）
 DISPLAY_NAMES = {
     "MiniMax-M*": "MiniMax-M2.7-highspeed",
     "speech-hd": "Speech 2.8",
@@ -49,16 +49,27 @@ def _select_models(models: list[dict], model: str | None, all_models: bool) -> l
     return [item for item in models if model in item.get("model_name", "")]
 
 
+def _normalize_model_remains(item: dict) -> dict:
+    return {
+        "model_name": item["model_name"],
+        "interval_remaining_count": item["current_interval_usage_count"],
+        "interval_total_count": item["current_interval_total_count"],
+        "weekly_remaining_count": item["current_weekly_usage_count"],
+        "reset_ms": item["remains_time"],
+    }
+
+
 def _format_table(models: list[dict]) -> str:
     lines = []
-    for item in models:
-        interval_remains = item["current_interval_usage_count"]
-        interval_total = item["current_interval_total_count"]
-        weekly_remaining = item["current_weekly_usage_count"]
-        reset = format_duration(item["remains_time"])
+    for raw_item in models:
+        item = _normalize_model_remains(raw_item)
+        interval_remains = item["interval_remaining_count"]
+        interval_total = item["interval_total_count"]
+        weekly_remaining = item["weekly_remaining_count"]
+        reset = format_duration(item["reset_ms"])
         name = resolve_display_name(item["model_name"])
         lines.append(
-            f"{name} | 5h刷新 | 本周{weekly_remaining} | 剩余 {interval_remains}/{interval_total} | {reset}刷新"
+            f"{name} | 5h刷新 | 本周剩余 {weekly_remaining} | 剩余 {interval_remains}/{interval_total} | {reset}刷新"
         )
     return " | ".join(lines)
 

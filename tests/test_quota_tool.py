@@ -5,8 +5,8 @@ import json
 
 SAMPLE_QUOTA_RESPONSE = {
     "model_remains": [
-        # current_interval_usage_count = 本轮剩余（直接使用，不用 total 减）
-        # current_weekly_usage_count  = 本周剩余（直接使用，不用 total 减）
+        # current_interval_usage_count = 本轮剩余（remaining in current interval，当前窗口剩余）
+        # current_weekly_usage_count  = 本周剩余（weekly remaining，本周剩余）
         {
             "model_name": "MiniMax-M*",
             "current_interval_usage_count": 14822,
@@ -42,7 +42,8 @@ def test_get_token_plan_quota_formats_single_model_response():
 
     assert "MiniMax-M2.7-highspeed" in output
     assert "14822/15000" in output
-    assert "本周148028" in output
+    assert "本周剩余 148028" in output
+    assert "字段说明" not in output
 
 
 def test_get_token_plan_quota_returns_json_when_requested():
