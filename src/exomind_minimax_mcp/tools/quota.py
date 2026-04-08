@@ -8,10 +8,10 @@ from exomind_minimax_mcp.clients.quota import TokenPlanQuotaClient
 from exomind_minimax_mcp.config import load_settings
 
 
-# API 字段语义（容易混淆，注意）：
-# - current_interval_usage_count = 本轮剩余（不是已用）
-# - current_weekly_usage_count  = 本周剩余（不是已用）
-# 直接使用这两个值，无需 total 减
+# API 字段语义：
+# - current_interval_usage_count = 本轮剩余
+# - current_weekly_usage_count   = 本周剩余
+# - remains_time                = 距刷新时间
 DISPLAY_NAMES = {
     "MiniMax-M*": "MiniMax-M2.7-highspeed",
     "speech-hd": "Speech 2.8",
@@ -58,7 +58,7 @@ def _format_table(models: list[dict]) -> str:
         reset = format_duration(item["remains_time"])
         name = resolve_display_name(item["model_name"])
         lines.append(
-            f"{name} 剩余 {interval_remains} / 总量 {interval_total} / 本周累计 {weekly_remaining} 剩余{reset}"
+            f"{name} | 5h刷新 | 本周{weekly_remaining} | 剩余 {interval_remains}/{interval_total} | {reset}刷新"
         )
     return " | ".join(lines)
 

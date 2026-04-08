@@ -13,11 +13,11 @@
 - `web_search`：官方网页搜索
 - `understand_image`：官方图片理解
 - `text_to_audio`：文本转语音，默认模型 `speech-2.8-hd`
+- `text_to_audio`：支持 `auto_play=true`，拿到 TTS 结果后立刻自动播放
 - `generate_video`：默认模型 `MiniMax-Hailuo-2.3-Fast`
 - `list_voices`：列出可用音色
 - `voice_clone`：声音克隆
 - `play_audio`：支持流式播放（streaming play，边下边播）
-- `generate_video`：视频生成
 - `query_video_generation`：查询视频任务状态
 - `text_to_image`：图片生成，默认模型 `image-01`
 - `music_generation`：音乐生成，默认模型 `music-2.5`
@@ -59,7 +59,7 @@ python -m pip install -e .
 }
 ```
 
-也可以直接看 [mcp_server_config_demo.json](/<repo-root>/mcp_server_config_demo.json)。
+也可以直接看 [mcp_server_config_demo.json](./mcp_server_config_demo.json)。
 
 ## 测试
 
@@ -75,6 +75,20 @@ python scripts/run_live_api_matrix.py --json
 
 这个脚本会用 `MINIMAX_TOKEN_PLAN_API_KEY` 依次调用全部工具，并把结果归类成 `passed`、`unsupported`、`insufficient_balance`、`usage_limit_exceeded`、`timeout`、`invalid_params` 等状态。
 
+## 低延迟 TTS 自动播放
+
+如果要尽量降低体感等待时间，直接调用 `text_to_audio` 并传：
+
+```json
+{
+  "text": "hello from MiniMax",
+  "auto_play": true,
+  "play_streaming": true
+}
+```
+
+当你没有显式指定 `resource_mode` 时，这个调用会临时优先走 URL 输出，再把拿到的音频 URL 直接交给流式播放链路，实现“拿到 URL 就边下边播”。
+
 当前自动化测试覆盖：
 - 配置解析
 - Token Plan 额度格式化
@@ -85,4 +99,4 @@ python scripts/run_live_api_matrix.py --json
 
 ## 状态
 
-这个仓库现在已经脱离 `uvx` 作为本地开发入口，统一运行时包位于 `src/exomind_minimax_mcp/`。后续会继续补更细的端到端测试和发布流程。
+这个仓库现在已经脱离 `uvx` 作为本地开发入口，统一运行时包位于 `src/exomind_minimax_mcp/`。真实在线矩阵测试可以通过 `scripts/run_live_api_matrix.py` 执行。

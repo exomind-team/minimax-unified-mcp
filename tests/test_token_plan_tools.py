@@ -41,13 +41,15 @@ def test_understand_image_accepts_local_file_and_url(tmp_path, monkeypatch):
     image_path.write_bytes(image_bytes)
 
     class FakeResponse:
-        headers = {"content-type": "image/png"}
-        content = b"url-image-bytes"
+        headers = {"content-type": "image/png", "content-length": "15"}
 
         def raise_for_status(self):
             return None
 
-    def fake_get(url: str):
+        def iter_content(self, chunk_size):
+            yield b"url-image-bytes"
+
+    def fake_get(url: str, *args, **kwargs):
         assert url == "https://example.com/demo.png"
         return FakeResponse()
 

@@ -155,12 +155,13 @@ def _run_single_tool(tool: str, state: _RunnerState, include_playback: bool) -> 
         elif tool == "text_to_audio":
             output = text_to_audio(
                 text="hello world from live matrix",
-                output_directory=str(state.output_dir),
+                output_directory=".",
+                base_path=str(state.output_dir),
                 resource_mode="local",
                 api_client=state.client,
             )
             audio_path = _extract_saved_file(output)
-            state.generated_audio_path = Path(audio_path) if audio_path else None
+            state.generated_audio_path = _resolve_artifact_path(audio_path, state.output_dir)
             detail = output
             status = "passed" if state.generated_audio_path and state.generated_audio_path.exists() else "error"
             artifact = str(state.generated_audio_path) if state.generated_audio_path else None
@@ -194,7 +195,11 @@ def _run_single_tool(tool: str, state: _RunnerState, include_playback: bool) -> 
             status = "passed"
             artifact = str(state.generated_audio_path)
         elif tool == "generate_video":
-            first_frame = create_live_png_fixture(state.output_dir / "live-video-first-frame.png")
+            first_frame = create_live_png_fixture(
+                state.output_dir / "live-video-first-frame.png",
+                width=320,
+                height=320,
+            )
             output = generate_video(
                 prompt="a red ball rolling slowly on a white table",
                 first_frame_image=str(first_frame),
@@ -270,6 +275,15 @@ def _build_result(
 def _extract_saved_file(message: str) -> str | None:
     match = re.search(r"File saved as: (.+?)(?:\. Voice used:|$)", message)
     return match.group(1) if match else None
+
+
+def _resolve_artifact_path(saved_path: str | None, output_dir: Path) -> Path | None:
+    if not saved_path:
+        return None
+    path = Path(saved_path)
+    if path.is_absolute():
+        return path
+    return output_dir / path
 
 
 def _extract_task_id(message: str) -> str | None:

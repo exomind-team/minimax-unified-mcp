@@ -67,6 +67,69 @@ def test_text_to_audio_uses_speech_28_hd_default(tmp_path):
     assert saved_files[0].read_bytes() == b"ABCD"
 
 
+def test_text_to_audio_auto_play_prefers_url_mode_for_low_latency(monkeypatch):
+    from exomind_minimax_mcp.tools.audio import text_to_audio
+
+    client = StubAudioClient({"data": {"audio": "https://example.com/live.mp3"}})
+    recorded: dict[str, object] = {}
+
+    def fake_play_audio(input_file_path: str, is_url: bool, streaming: bool) -> str:
+        recorded["input_file_path"] = input_file_path
+        recorded["is_url"] = is_url
+        recorded["streaming"] = streaming
+        return "played"
+
+    monkeypatch.setenv("MINIMAX_API_RESOURCE_MODE", "local")
+    monkeypatch.setattr("exomind_minimax_mcp.tools.audio.play_audio", fake_play_audio)
+
+    output = text_to_audio(
+        text="hello autoplay",
+        auto_play=True,
+        api_client=client,
+    )
+
+    assert client.calls[0][1]["output_format"] == "url"
+    assert recorded == {
+        "input_file_path": "https://example.com/live.mp3",
+        "is_url": True,
+        "streaming": True,
+    }
+    assert "Auto-play: played" in output
+
+
+def test_text_to_audio_auto_play_can_use_local_artifact(tmp_path, monkeypatch):
+    from exomind_minimax_mcp.tools.audio import text_to_audio
+
+    client = StubAudioClient({"data": {"audio": "41424344"}})
+    recorded: dict[str, object] = {}
+
+    def fake_play_audio(input_file_path: str, is_url: bool, streaming: bool) -> str:
+        recorded["input_file_path"] = input_file_path
+        recorded["is_url"] = is_url
+        recorded["streaming"] = streaming
+        return "played-local"
+
+    monkeypatch.setattr("exomind_minimax_mcp.tools.audio.play_audio", fake_play_audio)
+
+    output = text_to_audio(
+        text="hello local autoplay",
+        output_directory=str(tmp_path),
+        base_path=str(tmp_path),
+        resource_mode="local",
+        auto_play=True,
+        api_client=client,
+    )
+
+    saved_files = list(tmp_path.glob("*.mp3"))
+    assert len(saved_files) == 1
+    assert recorded == {
+        "input_file_path": str(saved_files[0]),
+        "is_url": False,
+        "streaming": True,
+    }
+    assert "Auto-play: played-local" in output
+
+
 def test_play_audio_supports_streaming_iterators(monkeypatch):
     from exomind_minimax_mcp.utils import play
 
@@ -102,13 +165,19 @@ def test_voice_clone_uploads_file_and_saves_demo_audio(tmp_path, monkeypatch):
     sample_audio.write_bytes(b"sample-audio")
 
     class FakeResponse:
-        content = b"demo-audio"
+        headers = {"content-length": "10"}
 
         def raise_for_status(self):
             return None
 
+        def iter_content(self, chunk_size):
+            yield b"demo-audio"
+
+        def close(self):
+            return None
+
     monkeypatch.setattr(
-        "exomind_minimax_mcp.tools.audio.requests.get",
+        "exomind_minimax_mcp.utils.requests.get",
         lambda *args, **kwargs: FakeResponse(),
     )
 

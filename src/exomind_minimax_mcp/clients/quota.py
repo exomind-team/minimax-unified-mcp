@@ -50,13 +50,29 @@ class TokenPlanQuotaClient:
             return ["-x", proxy]
         return []
 
-    def _fetch_with_curl(self) -> dict:
-        args = ["curl", "-sS", "--fail", "--location", *self._proxy_args()]
-        for key, value in self.build_headers().items():
-            args.extend(["-H", f"{key}: {value}"])
-        args.append(self.url)
+    @staticmethod
+    def _quote_curl_config_value(value: str) -> str:
+        return value.replace("\\", "\\\\").replace('"', '\\"')
 
-        result = subprocess.run(args, capture_output=True, text=True, timeout=20)
+    def _build_curl_config(self) -> str:
+        lines = [f'url = "{self._quote_curl_config_value(self.url)}"']
+        proxy = _get_proxy()
+        if proxy:
+            lines.append(f'proxy = "{self._quote_curl_config_value(proxy)}"')
+        for key, value in self.build_headers().items():
+            header = f"{key}: {value}"
+            lines.append(f'header = "{self._quote_curl_config_value(header)}"')
+        return "\n".join(lines) + "\n"
+
+    def _fetch_with_curl(self) -> dict:
+        args = ["curl", "-sS", "--fail", "--location", "--config", "-"]
+        result = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            timeout=20,
+            input=self._build_curl_config(),
+        )
         if result.returncode != 0:
             stderr = (result.stderr or "").strip()
             raise RuntimeError(f"curl failed ({result.returncode}): {stderr[:200]}")

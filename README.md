@@ -13,11 +13,11 @@ This project merges:
 - `web_search`: official Token Plan web search / 官方网页搜索
 - `understand_image`: official Token Plan image understanding / 官方图片理解
 - `text_to_audio`: speech generation with default `speech-2.8-hd`
+- `text_to_audio` also supports `auto_play=true` for immediate playback after TTS response
 - `generate_video`: default model `MiniMax-Hailuo-2.3-Fast`
 - `list_voices`
 - `voice_clone`
 - `play_audio` with streaming playback
-- `generate_video`
 - `query_video_generation`
 - `text_to_image` with default model `image-01`
 - `music_generation` with default model `music-2.5`
@@ -59,7 +59,7 @@ Key variables:
 }
 ```
 
-See [mcp_server_config_demo.json](/<repo-root>/mcp_server_config_demo.json).
+See [mcp_server_config_demo.json](./mcp_server_config_demo.json).
 
 ## Tests
 
@@ -75,6 +75,21 @@ python scripts/run_live_api_matrix.py --json
 
 The script executes every tool with `MINIMAX_TOKEN_PLAN_API_KEY` and returns classified statuses such as `passed`, `unsupported`, `insufficient_balance`, `usage_limit_exceeded`, `timeout`, and `invalid_params`.
 
+## Low-latency TTS playback
+
+For the lowest perceived delay, call `text_to_audio` with `auto_play=true`.
+If you do not explicitly set `resource_mode`, the tool will temporarily prefer URL output and immediately hand the URL to the streaming playback path.
+
+Example:
+
+```json
+{
+  "text": "hello from MiniMax",
+  "auto_play": true,
+  "play_streaming": true
+}
+```
+
 Current automated coverage includes:
 - config loading
 - Token Plan quota formatting
@@ -85,4 +100,4 @@ Current automated coverage includes:
 
 ## Status
 
-The repository is under active migration. The unified package now runs from `src/exomind_minimax_mcp/` and no longer depends on `uvx` for local development.
+The unified package now runs from `src/exomind_minimax_mcp/` and no longer depends on `uvx` for local development. Real online matrix testing is available through `scripts/run_live_api_matrix.py`.

@@ -45,15 +45,22 @@ def test_text_to_image_saves_files_in_local_mode(tmp_path, monkeypatch):
 
     class FakeResponse:
         def __init__(self, content: bytes):
-            self.content = content
+            self.headers = {"content-length": str(len(content))}
+            self._content = content
 
         def raise_for_status(self):
             return None
 
+        def iter_content(self, chunk_size):
+            yield self._content
+
+        def close(self):
+            return None
+
     contents = [b"img-one", b"img-two"]
     monkeypatch.setattr(
-        "exomind_minimax_mcp.tools.generation.requests.get",
-        lambda url: FakeResponse(contents.pop(0)),
+        "exomind_minimax_mcp.utils.requests.get",
+        lambda *args, **kwargs: FakeResponse(contents.pop(0)),
     )
 
     output = text_to_image(

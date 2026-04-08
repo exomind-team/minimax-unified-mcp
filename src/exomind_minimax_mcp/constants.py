@@ -1,6 +1,6 @@
 """Shared constants（共享常量） for multimodal MiniMax tools."""
 
-DEFAULT_VOICE_ID = "female-shaonv"
+DEFAULT_VOICE_ID = "female-shaonv-jingpin"
 DEFAULT_SPEECH_MODEL = "speech-2.8-hd"
 DEFAULT_MUSIC_MODEL = "music-2.5"
 DEFAULT_SPEED = 1.0
@@ -18,3 +18,6 @@ DEFAULT_T2I_MODEL = "image-01"
 
 RESOURCE_MODE_LOCAL = "local"
 RESOURCE_MODE_URL = "url"
+
+DEFAULT_HTTP_TIMEOUT_SECONDS = 30
+DEFAULT_MAX_HTTP_DOWNLOAD_BYTES = 100 * 1024 * 1024

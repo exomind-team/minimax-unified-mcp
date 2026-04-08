@@ -64,3 +64,11 @@ def test_live_runner_formats_json_report():
     parsed = json.loads(report)
     assert parsed[0]["tool"] == "web_search"
     assert parsed[1]["status"] == "unsupported"
+
+
+def test_live_runner_resolves_relative_artifact_into_output_dir(tmp_path):
+    from exomind_minimax_mcp.live_runner import _resolve_artifact_path
+
+    artifact = _resolve_artifact_path("audio.mp3", tmp_path)
+
+    assert artifact == tmp_path / "audio.mp3"

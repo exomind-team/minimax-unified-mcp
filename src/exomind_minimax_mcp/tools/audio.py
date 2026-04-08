@@ -10,6 +10,7 @@ import requests
 from exomind_minimax_mcp.clients.base import MiniMaxBaseClient
 from exomind_minimax_mcp.config import load_settings
 from exomind_minimax_mcp.constants import (
+    DEFAULT_HTTP_TIMEOUT_SECONDS,
     DEFAULT_BITRATE,
     DEFAULT_CHANNEL,
     DEFAULT_EMOTION,
@@ -24,7 +25,15 @@ from exomind_minimax_mcp.constants import (
     RESOURCE_MODE_LOCAL,
     RESOURCE_MODE_URL,
 )
-from exomind_minimax_mcp.utils import build_output_file, build_output_path, play, process_input_file
+from exomind_minimax_mcp.utils import (
+    build_output_file,
+    build_output_path,
+    describe_path,
+    download_bytes,
+    download_to_file,
+    play,
+    process_input_file,
+)
 
 
 def _get_multimodal_client(api_client: MiniMaxBaseClient | None) -> MiniMaxBaseClient:
@@ -54,6 +63,8 @@ def text_to_audio(
     language_boost: str = DEFAULT_LANGUAGE_BOOST,
     resource_mode: str | None = None,
     base_path: str | None = None,
+    auto_play: bool = False,
+    play_streaming: bool = True,
     api_client: MiniMaxBaseClient | None = None,
 ) -> str:
     """Convert text to audio（文本转语音）."""
@@ -62,7 +73,8 @@ def text_to_audio(
         raise ValueError("text is required")
 
     settings = load_settings()
-    effective_resource_mode = resource_mode or settings.resource_mode
+    requested_resource_mode = resource_mode or settings.resource_mode
+    effective_resource_mode = RESOURCE_MODE_URL if auto_play and resource_mode is None else requested_resource_mode
     effective_base_path = base_path or str(settings.base_path)
     client = _get_multimodal_client(api_client)
 
@@ -93,14 +105,22 @@ def text_to_audio(
         raise ValueError("audio payload is empty")
 
     if effective_resource_mode == RESOURCE_MODE_URL:
-        return f"Success. Audio URL: {audio_data}"
+        output = f"Success. Audio URL: {audio_data}"
+        if auto_play:
+            play_result = play_audio(audio_data, is_url=True, streaming=play_streaming)
+            return f"{output}. Auto-play: {play_result}"
+        return output
 
     audio_bytes = bytes.fromhex(audio_data)
     output_path = build_output_path(output_directory, effective_base_path)
     output_file = build_output_file("t2a", text, output_path, format)
     Path(output_file).parent.mkdir(parents=True, exist_ok=True)
     Path(output_file).write_bytes(audio_bytes)
-    return f"Success. File saved as: {output_file}. Voice used: {voice_id}"
+    output = f"Success. File saved as: {describe_path(output_file, output_path)}. Voice used: {voice_id}"
+    if auto_play:
+        play_result = play_audio(str(output_file), is_url=False, streaming=play_streaming)
+        return f"{output}. Auto-play: {play_result}"
+    return output
 
 
 def list_voices(
@@ -138,14 +158,17 @@ def voice_clone(
     client = _get_multimodal_client(api_client)
 
     if is_url:
-        response = requests.get(file, stream=True)
+        response = requests.get(file, stream=True, timeout=DEFAULT_HTTP_TIMEOUT_SECONDS)
         response.raise_for_status()
-        upload_response = client.request_json(
-            "POST",
-            "/v1/files/upload",
-            files={"file": ("audio_file.mp3", response.raw, "audio/mpeg")},
-            data={"purpose": "voice_clone"},
-        )
+        try:
+            upload_response = client.request_json(
+                "POST",
+                "/v1/files/upload",
+                files={"file": ("audio_file.mp3", response.raw, "audio/mpeg")},
+                data={"purpose": "voice_clone"},
+            )
+        finally:
+            response.close()
     else:
         path = Path(file)
         if not path.exists():
@@ -176,8 +199,11 @@ def voice_clone(
 
     output_path = build_output_path(output_directory, effective_base_path)
     output_file = build_output_file("voice_clone", text, output_path, "wav")
-    Path(output_file).write_bytes(requests.get(demo_audio).content)
-    return f"Voice cloned successfully: Voice ID: {voice_id}, demo audio saved as: {output_file}"
+    download_to_file(demo_audio, output_file)
+    return (
+        "Voice cloned successfully: "
+        f"Voice ID: {voice_id}, demo audio saved as: {describe_path(output_file, output_path)}"
+    )
 
 
 def play_audio(
@@ -189,11 +215,14 @@ def play_audio(
 
     if is_url:
         if streaming:
-            response = requests.get(input_file_path, stream=True)
+            response = requests.get(input_file_path, stream=True, timeout=DEFAULT_HTTP_TIMEOUT_SECONDS)
             response.raise_for_status()
-            play(response.iter_content(chunk_size=8192))
+            try:
+                play(response.iter_content(chunk_size=8192))
+            finally:
+                response.close()
         else:
-            play(requests.get(input_file_path).content)
+            play(download_bytes(input_file_path))
         return f"Successfully played audio file: {input_file_path}"
 
     file_path = process_input_file(input_file_path)
@@ -209,4 +238,4 @@ def play_audio(
         play(file_iterator())
     else:
         play(Path(file_path).read_bytes())
-    return f"Successfully played audio file: {file_path}"
+    return f"Successfully played audio file: {Path(file_path).name}"

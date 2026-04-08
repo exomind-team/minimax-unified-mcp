@@ -34,20 +34,20 @@ def test_make_output_file():
 def test_make_output_path():
     # Test with temporary directory
     with tempfile.TemporaryDirectory() as temp_dir:
-        result = build_output_path(temp_dir)
+        result = build_output_path(temp_dir, temp_dir)
         assert result == Path(temp_dir)
         assert result.exists()
         assert result.is_dir()
 
     # Test with None output_directory (should use base_path)
-    base_path = "/tmp/test_base"
-    result = build_output_path(None, base_path, is_test=True)
-    assert result == Path(base_path)
-    
-    # Test with relative output_directory
-    base_path = "/tmp/test_base"
-    result = build_output_path("subdir", base_path, is_test=True)
-    assert result == Path(base_path) / "subdir"
+    with tempfile.TemporaryDirectory() as base_dir:
+        base_path = Path(base_dir)
+        result = build_output_path(None, str(base_path), is_test=True)
+        assert result == base_path
+
+        # Test with relative output_directory
+        result = build_output_path("subdir", str(base_path), is_test=True)
+        assert result == base_path / "subdir"
     
     with tempfile.TemporaryDirectory() as allowed_base:
         allowed_path = Path(allowed_base)

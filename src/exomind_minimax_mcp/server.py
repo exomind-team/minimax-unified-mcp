@@ -60,10 +60,21 @@ def create_mcp() -> FastMCP:
     def text_to_audio_tool(
         text: str,
         output_directory: str | None = None,
-        voice_id: str = "female-shaonv",
+        voice_id: str = "female-shaonv-jingpin",
         model: str = DEFAULT_SPEECH_MODEL,
+        resource_mode: str | None = None,
+        auto_play: bool = False,
+        play_streaming: bool = True,
     ) -> str:
-        return text_to_audio(text=text, output_directory=output_directory, voice_id=voice_id, model=model)
+        return text_to_audio(
+            text=text,
+            output_directory=output_directory,
+            voice_id=voice_id,
+            model=model,
+            resource_mode=resource_mode,
+            auto_play=auto_play,
+            play_streaming=play_streaming,
+        )
 
     @mcp.tool(description="List available voices（列出可用声音）.")
     def list_voices_tool(voice_type: str = "all") -> str:

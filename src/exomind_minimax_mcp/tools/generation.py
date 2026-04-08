@@ -17,7 +17,7 @@ from exomind_minimax_mcp.constants import (
 )
 from exomind_minimax_mcp.image_utils import normalize_image_url
 from exomind_minimax_mcp.tools.audio import _get_multimodal_client
-from exomind_minimax_mcp.utils import build_output_file, build_output_path
+from exomind_minimax_mcp.utils import build_output_file, build_output_path, describe_path, download_to_file
 
 
 def generate_video(
@@ -89,8 +89,8 @@ def query_video_generation(
 
     output_path = build_output_path(output_directory, base_path)
     output_file = build_output_file("video", task_id, output_path, "mp4", True)
-    Path(output_file).write_bytes(requests.get(download_url).content)
-    return f"Success. Video saved as: {output_file}"
+    download_to_file(download_url, output_file)
+    return f"Success. Video saved as: {describe_path(output_file, output_path)}"
 
 
 def text_to_image(
@@ -124,11 +124,11 @@ def text_to_image(
         return f"Success. Image URLs: {image_urls}"
 
     output_path = build_output_path(output_directory, base_path)
-    output_files: list[Path] = []
+    output_files: list[str] = []
     for index, image_url in enumerate(image_urls):
         output_file = build_output_file("image", f"{index}_{prompt}", output_path, "jpg")
-        Path(output_file).write_bytes(requests.get(image_url).content)
-        output_files.append(output_file)
+        download_to_file(image_url, output_file)
+        output_files.append(describe_path(output_file, output_path))
     return f"Success. Images saved as: {output_files}"
 
 
@@ -168,7 +168,7 @@ def music_generation(
     output_path = build_output_path(output_directory, base_path)
     output_file = build_output_file("music", prompt, output_path, format)
     Path(output_file).write_bytes(bytes.fromhex(audio_payload))
-    return f"Success. Music saved as: {output_file}"
+    return f"Success. Music saved as: {describe_path(output_file, output_path)}"
 
 
 def voice_design(
@@ -197,4 +197,7 @@ def voice_design(
     output_path = build_output_path(output_directory, base_path)
     output_file = build_output_file("voice_design", preview_text, output_path, "mp3")
     Path(output_file).write_bytes(bytes.fromhex(trial_audio_hex))
-    return f"Success. File saved as: {output_file}. Voice ID generated: {generated_voice_id}"
+    return (
+        "Success. "
+        f"File saved as: {describe_path(output_file, output_path)}. Voice ID generated: {generated_voice_id}"
+    )
