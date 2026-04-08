@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "MiniMaxUnified": {
+      "command": "python",
+      "args": ["-m", "exomind_minimax_mcp"],
+      "env": {
+        "MINIMAX_TOKEN_PLAN_API_KEY": "YOUR_TOKEN_PLAN_KEY",
+        "MINIMAX_PAYG_API_KEY": "YOUR_PAYG_KEY",
+        "MINIMAX_API_KEY": "YOUR_FALLBACK_KEY",
+        "MINIMAX_API_HOST": "https://api.minimax.io",
+        "MINIMAX_MCP_BASE_PATH": "./output/minimax",
+        "MINIMAX_API_RESOURCE_MODE": "local",
+        "FASTMCP_LOG_LEVEL": "WARNING"
+      }
+    }
+  }
+}
