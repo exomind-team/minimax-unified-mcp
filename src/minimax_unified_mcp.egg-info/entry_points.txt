@@ -1,2 +1,0 @@
-[console_scripts]
-minimax-unified-mcp = exomind_minimax_mcp.server:main
