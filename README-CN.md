@@ -47,7 +47,7 @@
 ### 1. 安装
 
 ```powershell
-cd <repo-root>
+cd path/to/minimax-unified-mcp
 python -m pip install -e ".[dev]"
 ```
 

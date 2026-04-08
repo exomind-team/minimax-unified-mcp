@@ -5,12 +5,12 @@ This repository includes ideas, structure, and adapted code derived from upstrea
 ## Upstream Sources
 
 1. `MiniMax-MCP`
-   - Source: `MiniMax-AI/MiniMax-MCP`
+   - Source repository: `MiniMax-AI/MiniMax-MCP`
    - Upstream copyright: `Copyright 2025 MiniMax AI.`
    - License: MIT
 
 2. `minimax_coding_plan_mcp`
-   - Source: `minimax_coding_plan_mcp`
+   - Source package: `minimax_coding_plan_mcp`
    - Upstream package metadata declares MIT License
    - License: MIT
 

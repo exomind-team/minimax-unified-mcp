@@ -47,7 +47,7 @@ This repository is intended for local-first MCP usage in Claude, Codex, and comp
 ### 1. Install
 
 ```powershell
-cd <repo-root>
+cd path/to/minimax-unified-mcp
 python -m pip install -e ".[dev]"
 ```
 
